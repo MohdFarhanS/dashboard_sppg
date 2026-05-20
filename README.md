@@ -15,6 +15,7 @@ Sistem monitoring berbasis web untuk program **Makan Bergizi Gratis (MBG)** yang
 - [Panduan Penggunaan](#panduan-penggunaan)
 - [Struktur Database](#struktur-database)
 - [API Internal](#api-internal)
+- [Struktur Direktori](#struktur-direktori-penting)
 
 ---
 
@@ -24,56 +25,59 @@ Sistem monitoring berbasis web untuk program **Makan Bergizi Gratis (MBG)** yang
 - Halaman beranda publik tanpa perlu login (`/`)
 - Statistik real-time: rata-rata kalori, biaya/porsi, total porsi bulan ini, dan % AKG
 - Kartu "Menu Hari Ini" menampilkan foto menu yang sudah difinalisasi
-- Formulir kontak untuk mengirim pesan ke pengelola SPPG
+- Formulir kontak untuk mengirim pesan ke pengelola SPPG (tersimpan di `pesan_masuks`)
 
 ### Manajemen Menu Harian
-- Input menu harian beserta bahan pangan mengacu pada database TKPI
-- Pilih **kelompok sasaran** (12 kelompok: TK/PAUD, SD Kelas 1–3, SD 4–6, SMP, SMA, Balita, Ibu Hamil/Menyusui)
+- Input menu harian via **Simulasi Menu** — tidak ada form input langsung
+- Pilih **kelompok sasaran** (12 kelompok: TK/PAUD, SD 1–3, SD 4–6, SMP, SMA, Balita 1–3, Balita 4–6, Ibu Hamil T1/T2/T3, Ibu Menyusui)
 - Status menu: **Draft** (dapat diedit) dan **Final** (terkunci & masuk laporan)
 - **Wajib upload foto menu** sebelum finalisasi — tombol Finalisasi dinonaktifkan jika foto belum ada
-- Satu unit SPPG bisa menyimpan lebih dari satu menu per hari (satu menu per kelompok sasaran)
+- Constraint unik: satu menu per hari per `kelompok_sasaran` (satu SPPG bisa punya banyak menu per hari untuk kelompok berbeda)
 
 ### Data Bahan Pangan (TKPI)
-- Database lengkap **Tabel Komposisi Pangan Indonesia** (845+ bahan)
+- Database **Tabel Komposisi Pangan Indonesia** (845+ bahan pangan)
 - Informasi proksimat, mineral, dan vitamin per 100g BDD
-- Pencarian dan filter berdasarkan kategori & jenis
-- Import data massal via file CSV
+- Pencarian dan filter berdasarkan nama, kode, dan kategori
+- Toggle aktif/nonaktif bahan pangan
+- Import data massal via CSV (ketua_sppg)
 
 ### Simulasi Menu
-- Rakit kombinasi bahan pangan sebelum menyimpan
-- Pilih kelompok sasaran untuk target AKG yang akurat per kelompok
-- Kalkulasi estimasi gizi dan biaya secara real-time (AJAX)
-- Perbandingan pemenuhan gizi vs. AKG Makan Siang per kelompok
-- Simpan langsung sebagai Menu Harian (draft)
+- Rakit kombinasi bahan pangan sebelum menyimpan sebagai menu harian
+- Pilih kelompok sasaran untuk target AKG yang akurat per kelompok (12 kelompok)
+- Kalkulasi estimasi gizi dan biaya secara real-time via AJAX
+- Perbandingan 8 nutrisi (Energi, Protein, Lemak, Karbohidrat, Serat, Kalsium, Besi, Vit C) vs. AKG Makan Siang per kelompok
+- Status nutrisi: **Kurang** (<80% AKG), **Cukup** (80–120%), **Lebih** (>120%)
+- Simpan langsung sebagai Menu Harian (draft) atau edit menu yang sudah ada
 
 ### Monitoring Gizi
-- Pemenuhan gizi harian dibandingkan dengan **Angka Kecukupan Gizi (AKG)** makan siang
+- Pemenuhan gizi harian dibandingkan dengan AKG makan siang per kelompok sasaran
 - Grafik tren energi harian dalam satu bulan
-- Status gizi: **Kurang** (<70%), **Cukup** (70–130%), **Lebih** (>130%)
-- Dashboard ringkasan rata-rata bulanan
+- Rata-rata bulanan dan perbandingan vs AKG dalam grafik batang
+- Tabel daftar menu final bulan ini dengan status gizi masing-masing
 
 ### Monitoring Biaya Produksi
-- Kalkulasi cost per porsi berdasarkan harga bahan yang diinput
+- Kalkulasi cost per porsi berdasarkan harga bahan aktif pada tanggal menu
 - Perbandingan cost aktual vs. anggaran per porsi
-- Grafik tren biaya vs. anggaran bulanan
-- Manajemen harga bahan per unit SPPG
+- Grafik tren biaya vs. anggaran harian
+- Manajemen harga bahan dengan sistem tarif time-based (berlaku mulai–sampai)
+- Harga bahan dikunci sebagai snapshot saat menu difinalisasi
 
 ### Budget Alert
-- Notifikasi otomatis menu yang melebihi anggaran (Over Budget)
-- Peringatan menu mendekati batas anggaran (≥85%)
-- Badge notifikasi di navbar dengan jumlah peringatan aktif
+- Notifikasi otomatis menu yang melebihi anggaran (Over Budget: >100%)
+- Peringatan menu mendekati batas anggaran (Warning: ≥85%)
+- Badge notifikasi di navbar dengan jumlah alert aktif (hanya bulan berjalan, dapat di-dismiss per sesi)
+- Kartu alert per menu dengan progress bar penyerapan anggaran
 
 ### Laporan
 - Laporan gizi bulanan (perbandingan AKG)
 - Laporan biaya produksi bulanan
-- Export ke **Excel** dan **PDF**
+- Export ke **Excel** (.xlsx via FastExcel) dan **PDF** (via DomPDF)
 - Fitur cetak langsung dari browser
 
-### Administrasi (Admin)
-- Kelola pengguna (tambah, edit, reset password, hapus)
-- Kelola anggaran per porsi per unit SPPG dengan periode berlaku
-- Import data TKPI via CSV dengan mode skip/update
-- Filter data lintas semua unit SPPG
+### Administrasi
+- **Superadmin**: kelola pengguna (tambah/edit/reset password/hapus), semua role kecuali superadmin
+- **Ketua SPPG**: kelola anggaran per porsi per kelompok dengan periode berlaku, import TKPI, inbox pesan masuk
+- **Akuntan**: input dan hapus harga bahan
 
 ---
 
@@ -81,14 +85,14 @@ Sistem monitoring berbasis web untuk program **Makan Bergizi Gratis (MBG)** yang
 
 | Komponen | Teknologi |
 |---|---|
-| Backend | Laravel 12 (PHP) |
+| Backend | Laravel 12 (PHP 8.2+) |
 | Frontend | Bootstrap 5.3, Vanilla JS |
 | Ikon | Font Awesome 6.5 |
 | Chart | Chart.js 4.4 |
 | Font | Plus Jakarta Sans |
-| Database | MySQL |
-| PDF Export | DomPDF (via Laravel) |
-| Excel Export | FastExcel (rap2hpoutre) |
+| Database | MySQL (dev: SQLite) |
+| PDF Export | barryvdh/laravel-dompdf |
+| Excel Export | rap2hpoutre/fast-excel |
 | Autocomplete | Custom AJAX + Fetch API |
 
 ---
@@ -98,7 +102,7 @@ Sistem monitoring berbasis web untuk program **Makan Bergizi Gratis (MBG)** yang
 - **PHP** >= 8.2
 - **Composer** >= 2.x
 - **Node.js** >= 18.x & NPM
-- **MySQL** >= 8.0
+- **MySQL** >= 8.0 (atau SQLite untuk development)
 - **PHP Extensions:** BCMath, Ctype, Fileinfo, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML
 
 ---
@@ -109,7 +113,7 @@ Sistem monitoring berbasis web untuk program **Makan Bergizi Gratis (MBG)** yang
 
 ```bash
 git clone https://github.com/MohdFarhanS/dashboard_mbg.git
-cd dashboard-mbg
+cd dashboard_mbg
 ```
 
 ### 2. Install Dependensi PHP
@@ -131,9 +135,12 @@ Edit file `.env`:
 
 ```env
 DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
 DB_DATABASE=dashboard_mbg
 DB_USERNAME=root
 DB_PASSWORD=your_password
+
 UNIT_SPPG="SPPG Utama"
 ```
 
@@ -144,14 +151,24 @@ php artisan migrate
 php artisan db:seed
 ```
 
-Seeder akan membuat:
-- `superadmin@mbg.id` / `password123` → superadmin
-- `ketua@mbg.id` / `password123` → ketua_sppg
-- `gizi@mbg.id` / `password123` → ahli_gizi
-- `akuntan@mbg.id` / `password123` → akuntan
-- **845+ data bahan pangan TKPI**
+Seeder akan membuat 4 akun pengguna dan 845+ data bahan pangan TKPI:
 
-### 6. Build Frontend & Jalankan Server
+| Email | Password | Role |
+|---|---|---|
+| `superadmin@mbg.id` | `password123` | superadmin |
+| `ketua@mbg.id` | `password123` | ketua_sppg |
+| `gizi@mbg.id` | `password123` | ahli_gizi |
+| `akuntan@mbg.id` | `password123` | akuntan |
+
+### 6. Buat Symlink Storage
+
+```bash
+php artisan storage:link
+```
+
+Diperlukan agar foto menu dapat diakses dari browser.
+
+### 7. Build Frontend & Jalankan Server
 
 ```bash
 npm install
@@ -161,304 +178,146 @@ php artisan serve
 
 Akses aplikasi di `http://localhost:8000`.
 
+**Mode development (semua service sekaligus):**
+
+```bash
+composer dev
+```
+
 ---
 
 ## Konfigurasi
 
-### Mengubah Nilai AKG
+### Nilai AKG per Kelompok
 
-Edit `app/Constants/AKG.php`. Nilai AKG Makan Siang saat ini (32,5% dari AKG harian Anak 7–12 tahun):
+Edit `app/Constants/AKG.php`. Konstanta yang tersedia:
 
-```php
-const MAKAN_SIANG = [
-    'energi'      => 578,  // kkal
-    'protein'     => 14,   // g
-    'lemak'       => 19,   // g
-    'karbohidrat' => 88,   // g
-    'serat'       => 8,    // g
-    'kalsium'     => 350,  // mg
-    'besi'        => 4,    // mg
-    'vit_c'       => 16,   // mg
-];
+- `AKG::HARIAN` — Target harian referensi anak 7–12 tahun
+- `AKG::MAKAN_SIANG` — Target makan siang (32,5% dari AKG harian)
+- `AKG::KELOMPOK` — Target per kelompok sasaran (12 kelompok)
+- `AKG::PCT_PAGI` (0.225) dan `AKG::PCT_SIANG` (0.325) — Proporsi waktu makan
+
+Untuk mengubah target kelompok, edit nilai pada `AKG::KELOMPOK` di file tersebut.
+
+### Unit SPPG
+
+Set nama unit di `.env`:
+```env
+UNIT_SPPG="Nama SPPG Anda"
 ```
-
-Untuk target per kelompok sasaran (TK, SD, SMP, SMA, Balita, Ibu Hamil/Menyusui), edit konstanta `AKG::KELOMPOK`. Simulasi menu menggunakan `AKG::targetSajian($kelompok_sasaran)` yang menghitung 32,5% dari nilai harian kelompok tersebut.
 
 ---
 
 ## Struktur Peran Pengguna
-
-Sistem menggunakan 4 role:
 
 | Fitur | Superadmin | Ketua SPPG | Ahli Gizi | Akuntan |
 |---|:---:|:---:|:---:|:---:|
 | Kelola Pengguna | ✅ | ❌ | ❌ | ❌ |
 | Dashboard | ❌ | ✅ | ✅ | ✅ |
 | Lihat Menu Harian | ❌ | ✅ | ✅ | ❌ |
-| Buat/Edit/Hapus Menu | ❌ | ❌ | ✅ | ❌ |
+| Buat/Edit/Hapus/Finalisasi Menu | ❌ | ❌ | ✅ | ❌ |
+| Upload Foto Menu | ❌ | ❌ | ✅ | ❌ |
 | Simulasi Menu | ❌ | ❌ | ✅ | ❌ |
-| Monitor Gizi | ❌ | ✅ | ✅ | ❌ |
-| Monitor Biaya | ❌ | ✅ | ❌ | ✅ |
+| Monitoring Gizi | ❌ | ✅ | ✅ | ❌ |
+| Monitoring Biaya | ❌ | ✅ | ❌ | ✅ |
 | Budget Alert | ❌ | ✅ | ❌ | ✅ |
-| Kelola Harga Bahan | ❌ | ✅ | ❌ | ✅ |
+| Lihat Harga Bahan | ❌ | ✅ | ❌ | ✅ |
+| Tambah/Hapus Harga Bahan | ❌ | ❌ | ❌ | ✅ |
 | Kelola Anggaran Porsi | ❌ | ✅ | ❌ | ❌ |
 | Laporan & Export | ❌ | ✅ | ✅ | ✅ |
-| Data Bahan Pangan (TKPI) | ❌ | ✅ (kelola) | ✅ (lihat) | ✅ (lihat) |
-| Import TKPI | ❌ | ✅ | ❌ | ❌ |
+| Lihat Bahan Pangan (TKPI) | ❌ | ✅ | ✅ | ✅ |
+| Kelola Bahan Pangan (CRUD) | ❌ | ✅ | ❌ | ❌ |
+| Import TKPI CSV | ❌ | ✅ | ❌ | ❌ |
+| Inbox Pesan Masuk | ❌ | ✅ | ❌ | ❌ |
+
+> Superadmin diarahkan ke halaman **Manajemen Pengguna** setelah login, bukan Dashboard.
 
 ---
 
 ## Panduan Penggunaan
 
-### Login
+### Alur Kerja Lengkap
 
-1. Buka aplikasi di browser (`http://localhost:8000`)
-2. Masukkan **email** dan **password**
-3. Klik **Login**
+```
+[Superadmin] — Setup awal
+  └─ Tambah pengguna: Ketua SPPG, Ahli Gizi, Akuntan
 
-Akun default setelah seeding:
-- Superadmin: `superadmin@mbg.id` / `password123`
-- Ketua SPPG: `ketua@mbg.id` / `password123`
-- Ahli Gizi: `gizi@mbg.id` / `password123`
-- Akuntan: `akuntan@mbg.id` / `password123`
+[Ketua SPPG] — Setup operasional
+  └─ Set anggaran per porsi (menu Anggaran)
+  └─ (Delegasi ke Akuntan) Input harga bahan
 
-> Superadmin langsung diarahkan ke halaman **Manajemen Pengguna**, bukan Dashboard.
+[Akuntan] — Harga bahan
+  └─ Monitoring Biaya → Kelola Harga Bahan → Tambah Tarif Baru
 
----
+[Ahli Gizi] — Harian
+  └─ Simulasi → Isi data menu + bahan → Hitung Estimasi → Simpan (Draft)
+  └─ Menu Harian → Upload Foto → Finalisasi (Final)
 
-### Dashboard (Halaman Utama)
+[Ketua SPPG / Ahli Gizi / Akuntan] — Monitoring & Laporan
+  └─ Dashboard → ringkasan bulanan
+  └─ Monitoring Gizi (Ketua/Ahli Gizi) → pantau AKG per kelompok
+  └─ Monitoring Biaya (Ketua/Akuntan) → pantau cost vs anggaran
+  └─ Budget Alert → investigasi menu bermasalah
+  └─ Laporan → export Excel/PDF
 
-Setelah login, Anda langsung masuk ke **Dashboard** yang menampilkan:
-
-- **Ringkasan hari ini**: jumlah menu, total kalori, biaya produksi, dan status anggaran
-- **Progress pemenuhan gizi** dibandingkan AKG (Energi, Protein, Lemak, Karbohidrat)
-- **Grafik distribusi biaya** per kategori bahan pangan
-- **Budget Alert** — daftar menu yang melebihi atau mendekati anggaran
-- **Tabel menu hari ini** dengan status gizi dan anggaran
-
-> Admin melihat data semua unit SPPG. Pengelola hanya melihat unit miliknya.
-
----
-
-### Membuat Menu Harian (Pengelola)
-
-Alur utama pembuatan menu harian:
-
-**Langkah 1 — Buka Simulasi Menu**
-
-Klik menu **Simulasi** di sidebar, atau dari halaman **Menu Harian** klik tombol **+ Buat Menu Baru**.
-
-**Langkah 2 — Isi Data Menu**
-
-- **Tanggal**: pilih tanggal menu (tidak bisa duplikat per kelompok sasaran per hari)
-- **Kelompok Sasaran**: pilih kelompok penerima (TK/PAUD, SD 1–3, SD 4–6, SMP, SMA, Balita, Ibu Hamil, Ibu Menyusui) — menentukan target AKG yang digunakan
-- **Jumlah Porsi**: isi total porsi yang akan dibuat
-- **Nama Menu** (opsional): misalnya "Makan Siang Senin"
-
-**Langkah 3 — Tambah Bahan Pangan**
-
-- Klik **+ Tambah Bahan**
-- Ketik nama bahan di kolom pencarian (autocomplete dari database TKPI)
-- Pilih bahan yang sesuai dari dropdown
-- Isi **Gram per Porsi** (berat per satu porsi)
-- Isi **Jumlah Porsi**
-- Ulangi untuk setiap bahan pangan
-
-**Langkah 4 — Hitung Estimasi**
-
-Klik tombol **Hitung Estimasi**. Panel kanan akan menampilkan:
-
-- **Progress bar gizi** untuk 8 nutrisi: Energi, Protein, Lemak, Karbohidrat, Serat, Kalsium, Besi, Vitamin C
-  - Hijau: cukup (70–130% AKG)
-  - Merah: kurang (<70% AKG)
-  - Kuning: berlebih (>130% AKG)
-- **Estimasi biaya**: total biaya, biaya per porsi, anggaran, selisih, dan Food Cost Ratio
-- **Status anggaran**: Aman / Mendekati Batas / Over Budget
-- **Tabel detail** per bahan: gram, kalori, efisiensi BDD, biaya
-
-**Langkah 5 — Simpan Menu**
-
-Isi **Kelompok Penerima** (nama sekolah/kelompok), lalu klik **Simpan ke Menu Harian**. Menu tersimpan sebagai **Draft**.
-
-**Langkah 6 — Upload Foto Menu**
-
-Di halaman **Menu Harian**, buka detail menu Draft. Klik tombol **Upload Foto** lalu pilih foto menu (JPG/PNG/WebP, maks 2 MB). Foto ini akan tampil di halaman publik landing page setelah menu difinalisasi.
-
-> Tombol **Finalisasi** tidak aktif selama foto belum diupload.
-
-**Langkah 7 — Finalisasi Menu**
-
-Setelah foto terupload, klik **Finalisasi**. Status berubah menjadi **Final** — menu terkunci, harga bahan dan anggaran dikunci sebagai snapshot, dan menu masuk ke laporan serta monitoring.
-
-> Menu dengan status **Draft** tidak dihitung dalam laporan dan grafik monitoring.
+[Ketua SPPG] — Komunikasi
+  └─ Pesan Masuk → baca pesan dari landing page
+```
 
 ---
 
-### Monitoring Gizi
+### Membuat Menu Harian
 
-Buka menu **Monitoring Gizi** di sidebar.
+Alur pembuatan menu harian dilakukan melalui **Simulasi Menu**:
 
-- **Filter** berdasarkan bulan (dan unit SPPG untuk Admin)
-- Lihat **status gizi hari ini** dengan progress bar per nutrisi
-- Lihat **rata-rata bulanan** dan perbandingan vs AKG dalam grafik batang
-- Pantau **grafik tren energi harian** sepanjang bulan
-- Tabel **daftar menu final** bulan ini dengan status gizi masing-masing
+1. **Buka Simulasi** — klik Simulasi di sidebar
+2. **Isi data dasar**: tanggal, kelompok sasaran, jumlah porsi, nama menu (opsional)
+3. **Tambah bahan pangan** — ketik nama bahan (autocomplete TKPI), isi jumlah gram per porsi
+4. **Klik Hitung Estimasi** — panel kanan menampilkan:
+   - Progress bar 8 nutrisi vs AKG makan siang kelompok yang dipilih
+   - Estimasi biaya total, cost per porsi, dan perbandingan vs anggaran
+5. **Simpan ke Menu Harian** — tersimpan sebagai **Draft**
+6. **Upload Foto** — buka Menu Harian, klik Upload Foto (JPG/PNG/WebP, maks 2 MB)
+7. **Finalisasi** — klik Finalisasi setelah foto terupload
 
-Kode warna status gizi:
-| Status | Kondisi | Warna |
-|---|---|---|
-| Cukup | 70% – 130% AKG | Hijau |
-| Kurang | < 70% AKG | Merah |
-| Lebih | > 130% AKG | Kuning |
-
----
-
-### Monitoring Biaya Produksi
-
-Buka menu **Monitoring Biaya** di sidebar.
-
-- **Filter** berdasarkan bulan
-- Lihat **4 kartu statistik**: jumlah hari, total biaya, rata-rata biaya/porsi, jumlah over/aman
-- Pantau **grafik tren biaya vs anggaran** per hari
-- Tabel **rekap biaya** per menu dengan kolom selisih dan status
-
-> Biaya dihitung otomatis dari harga bahan yang diinput oleh Admin. Jika harga belum diinput, biaya tidak bisa dihitung.
+> Menu **Draft** tidak muncul di laporan, grafik monitoring, dan landing page. Hanya menu **Final** yang dihitung.
 
 ---
 
-### Budget Alert
+### Manajemen Harga Bahan (Akuntan)
 
-Buka menu **Budget Alert** di sidebar untuk melihat semua menu yang melampaui atau mendekati batas anggaran.
+1. Buka **Monitoring Biaya → Kelola Harga Bahan**
+2. Klik **+ Tambah Tarif Baru**
+3. Pilih bahan pangan, isi harga per 100g, tanggal mulai berlaku
+4. Simpan
 
-- **Filter** berdasarkan bulan, unit, dan tingkat keparahan
-- **3 kartu statistik**: Over Budget, Mendekati Batas (≥85%), Aman
-- Setiap kartu alert menampilkan: nama menu, tanggal, biaya/porsi, anggaran, selisih, dan progress bar serapan anggaran
-- Tombol **Lihat Detail Menu** dan **Lihat Rincian Biaya** untuk investigasi lebih lanjut
-
-Badge merah di navbar menunjukkan jumlah alert aktif.
-
----
-
-### Laporan
-
-Buka menu **Laporan** di sidebar.
-
-**Melihat Laporan:**
-1. Pilih **bulan** dan **tipe laporan** (Gizi / Biaya)
-2. Tabel laporan akan menampilkan data semua menu final di bulan tersebut
-
-**Export Laporan:**
-- Klik **Export Excel** untuk mengunduh file `.xlsx`
-- Klik **Export PDF** untuk mengunduh file `.pdf`
-- Klik **Cetak** untuk mencetak langsung dari browser
-
----
-
-### Kelola Harga Bahan (Ketua SPPG / Akuntan)
-
-Buka **Monitoring Biaya** → klik tombol **Kelola Harga Bahan**.
-
-1. Klik **+ Tambah Harga**
-2. Pilih **bahan pangan** dari dropdown
-3. Isi **harga per 100g** (dalam Rupiah)
-4. Isi **tanggal mulai berlaku**
-5. Tambahkan keterangan (opsional)
-6. Klik **Simpan**
-
-Harga dapat diubah dari waktu ke waktu — sistem selalu menggunakan harga yang aktif pada tanggal menu. Saat menu di-**finalisasi**, harga tiap bahan dikunci sebagai snapshot sehingga kalkulasi biaya historis tidak berubah jika tarif harga diperbarui.
+Sistem selalu mengambil harga aktif pada tanggal menu (`berlaku_mulai <= tanggal AND (berlaku_sampai IS NULL OR berlaku_sampai >= tanggal)`). Saat menu difinalisasi, harga dikunci sebagai snapshot di `menu_detail_bahans.harga_per_100g`.
 
 ---
 
 ### Kelola Anggaran Porsi (Ketua SPPG)
 
-Buka menu **Anggaran** di sidebar.
+1. Buka menu **Anggaran** di sidebar
+2. Klik **+ Tambah Anggaran**
+3. Pilih kelompok (Balita s/d Kelas 3 SD / Kelas 4 SD s/d Ibu Menyusui)
+4. Isi nominal anggaran per porsi (Rp) dan tanggal mulai berlaku
 
-1. Klik **+ Tambah Anggaran**
-2. Isi **nominal anggaran per porsi** (Rp)
-3. Isi **tanggal mulai berlaku**
-4. Tambahkan keterangan (opsional)
-5. Klik **Simpan**
-
-Anggaran per porsi digunakan sebagai acuan di seluruh fitur monitoring biaya dan budget alert.
+Anggaran juga dikunci sebagai snapshot saat menu difinalisasi.
 
 ---
 
-### Data Bahan Pangan / TKPI (Ketua SPPG)
+### Import TKPI CSV (Ketua SPPG)
 
-Buka menu **Bahan Pangan** di sidebar.
+1. Buka **Import TKPI** di sidebar
+2. Upload file CSV (koma atau titik koma sebagai delimiter)
+3. Review 10 baris preview
+4. Pilih mode: **Skip** (abaikan duplikat) atau **Update** (perbarui data yang ada)
+5. Klik Konfirmasi Import
 
-**Mencari Bahan:**
-- Gunakan kolom **Cari** untuk mencari berdasarkan nama atau kode TKPI
-- Filter berdasarkan **Kategori** (Serealia, Daging, Sayuran, dll.)
-- Filter berdasarkan **Jenis** (Tunggal / Olahan)
-
-**Menambah Bahan (Admin):**
-1. Klik **+ Tambah Bahan Pangan**
-2. Isi semua kolom: nama, kode, kategori, nilai gizi per 100g, dan nilai BDD
-3. Klik **Simpan**
-
-**Import Massal via CSV (Admin):**
-1. Buka menu **Import TKPI** di sidebar
-2. Upload file CSV dengan kolom minimal: `nama_bahan, energi, protein, lemak, karbohidrat`
-3. Review preview 10 baris pertama
-4. Pilih mode: **Skip** (abaikan data duplikat) atau **Update** (perbarui data yang ada)
-5. Klik **Konfirmasi Import**
-
-Format CSV minimal:
+Format minimal:
 ```
 nama_bahan,energi,protein,lemak,karbohidrat
 Nasi Putih,175,3.2,0.3,39.8
-Ayam Goreng,320,18.5,22.1,0
-```
-
----
-
-### Kelola Pengguna (Superadmin)
-
-Buka menu **Pengguna** di sidebar.
-
-**Menambah Pengguna:**
-1. Klik **+ Tambah Pengguna**
-2. Isi nama, email, password, pilih role (**Ketua SPPG** / **Ahli Gizi** / **Akuntan**)
-3. Isi **Unit SPPG** untuk role operasional
-4. Klik **Simpan**
-
-**Reset Password:**
-1. Klik ikon kunci di baris pengguna
-2. Isi password baru (minimal 8 karakter)
-3. Konfirmasi password
-4. Klik **Simpan**
-
-**Menghapus Pengguna:**
-Klik ikon hapus di baris pengguna. Akun sendiri tidak bisa dihapus.
-
----
-
-### Alur Kerja Lengkap (Ringkasan)
-
-```
-[Superadmin]
-  └─ Setup awal:
-       1. Tambah pengguna Ketua SPPG, Ahli Gizi, Akuntan
-
-[Ketua SPPG]
-  └─ Setup operasional:
-       1. Set anggaran per porsi per kelompok (Anggaran)
-       2. Input harga bahan (delegasi ke Akuntan)
-
-[Ahli Gizi] — Harian
-  └─ Simulasi Menu → Pilih kelompok sasaran → Tambah bahan → Hitung estimasi → Simpan (Draft)
-  └─ Menu Harian → Upload Foto Menu → Finalisasi (Final)
-
-[Ketua SPPG / Ahli Gizi / Akuntan] — Monitoring
-  └─ Dashboard → cek ringkasan bulanan
-  └─ Monitoring Gizi (Ketua/Ahli Gizi) → pantau pemenuhan AKG per kelompok sasaran
-  └─ Monitoring Biaya (Ketua/Akuntan) → pantau cost vs anggaran
-  └─ Budget Alert (Ketua/Akuntan) → investigasi menu bermasalah
-  └─ Laporan → export Excel/PDF bulanan
-
-[Ketua SPPG] — Inbox
-  └─ Pesan Masuk → baca & tindak lanjuti pesan dari formulir kontak landing page
 ```
 
 ---
@@ -466,56 +325,40 @@ Klik ikon hapus di baris pengguna. Akun sendiri tidak bisa dihapus.
 ## Struktur Database
 
 ```
-users                   — Pengguna sistem (4 role)
-bahan_pangans           — Data TKPI (845+ bahan pangan)
-menu_harians            — Menu harian per unit SPPG; unique (tanggal, kelompok_sasaran)
-                          Kolom foto_menu menyimpan path foto (wajib sebelum finalisasi)
-menu_detail_bahans      — Detail bahan dalam satu menu; menyimpan snapshot harga saat finalisasi
-harga_bahans            — Harga bahan per 100g (time-based)
-anggaran_porsis         — Anggaran per porsi per kelompok (time-based)
-import_logs             — Riwayat import CSV TKPI
-pesan_masuks            — Pesan kontak dari halaman publik (is_read, nama, no_hp, pesan)
+users                — Pengguna sistem (4 role: superadmin, ketua_sppg, ahli_gizi, akuntan)
+bahan_pangans        — Data TKPI 845+ bahan pangan dengan nilai gizi per 100g BDD
+menu_harians         — Menu harian; unique (tanggal, kelompok_sasaran); status: draft|final
+menu_detail_bahans   — Bahan-bahan dalam satu menu + snapshot harga saat finalisasi
+harga_bahans         — Harga bahan per 100g (time-based: berlaku_mulai, berlaku_sampai)
+anggaran_porsis      — Anggaran per porsi per kelompok (time-based, per kelompok)
+import_logs          — Riwayat import CSV TKPI
+pesan_masuks         — Pesan kontak dari landing page (is_read, nama, no_hp, pesan)
 ```
 
-**Relasi Utama:**
+**Relasi:**
 
 ```
-users          ──< menu_harians         (user membuat menu)
-menu_harians   ──< menu_detail_bahans   (menu punya banyak bahan)
-bahan_pangans  ──< menu_detail_bahans   (bahan dipakai di banyak menu)
-bahan_pangans  ──< harga_bahans         (bahan punya riwayat harga)
-users          ──< import_logs          (user melakukan import)
+users          ──< menu_harians         (user_id)
+menu_harians   ──< menu_detail_bahans   (menu_harian_id, cascade delete)
+bahan_pangans  ──< menu_detail_bahans   (bahan_pangan_id)
+bahan_pangans  ──< harga_bahans         (bahan_pangan_id)
+users          ──< anggaran_porsis      (created_by)
+users          ──< import_logs          (user_id)
 ```
 
 ---
 
 ## API Internal
 
-Semua endpoint membutuhkan autentikasi (session/cookie).
+Semua endpoint memerlukan autentikasi (session Laravel). Tidak ada autentikasi token.
 
-### Search Bahan Pangan
+### Autocomplete Bahan Pangan
 ```
 GET /api/bahan-pangan/search?q={keyword}&limit={n}
 ```
+Tersedia untuk semua role operasional. Response menyertakan `harga_per_100g` aktif.
 
-**Response:**
-```json
-[
-  {
-    "id": 1,
-    "kode": "AR001",
-    "nama_bahan": "Beras giling, putih",
-    "kategori": "Serealia",
-    "energi": 360,
-    "protein": 6.8,
-    "lemak": 0.5,
-    "karbohidrat": 79.9,
-    "bdd": 100
-  }
-]
-```
-
-### Kalkulasi Simulasi
+### Kalkulasi Simulasi (AJAX)
 ```
 POST /simulasi/kalkulasi
 Content-Type: application/json
@@ -523,11 +366,11 @@ Content-Type: application/json
 {
   "bahans": [{"id": 1, "gram": 150, "porsi": 100}],
   "jumlah_porsi": 100,
-  "tanggal": "2026-04-26",
+  "tanggal": "2026-05-20",
   "kelompok": "SD_4_6"
 }
 ```
-Field `kelompok` adalah salah satu dari 12 kunci AKG (`TK_PAUD`, `SD_1_3`, `SD_4_6`, `SMP`, `SMA`, `BALITA_1_3`, `BALITA_4_6`, `HAMIL_T1/T2/T3`, `MENYUSUI_6BLN_1/2`). Response menyertakan `akg_target` dan `persen_akg` sesuai kelompok yang dipilih.
+`kelompok` adalah salah satu dari 12 kunci `AKG::KELOMPOK`. Response menyertakan `akg_target`, `persen_akg`, dan `anggaran_per_kelompok`.
 
 ### Upload Foto Menu
 ```
@@ -536,11 +379,11 @@ Content-Type: multipart/form-data
 
 foto_menu: <file> (JPG/PNG/WebP, maks 2 MB)
 ```
-Hanya bisa dilakukan pada menu berstatus `draft`. Menghapus foto lama jika ada.
+Hanya bisa dilakukan pada menu berstatus `draft`. Ahli gizi only.
 
 ### Tren Gizi Bulanan
 ```
-GET /gizi/api/trend?bulan=2026-04
+GET /gizi/api/trend?bulan=2026-05
 ```
 
 ### Estimasi Biaya
@@ -554,36 +397,46 @@ POST /biaya/api/estimasi
 
 ```
 app/
-├── Constants/AKG.php                  — Nilai AKG per kelompok sasaran (12 kelompok)
-├── Http/Controllers/
-│   ├── LandingController.php          — Halaman publik + form kontak
-│   ├── DashboardController.php
-│   ├── MenuHarianController.php       — Termasuk uploadFoto & finalize
-│   ├── BahanPanganController.php
-│   ├── GiziController.php
-│   ├── BiayaController.php
-│   ├── SimulasiController.php
-│   ├── AnggaranController.php
-│   ├── LaporanController.php
-│   ├── BudgetAlertController.php
-│   ├── ImportTkpiController.php
-│   ├── PesanMasukController.php       — Inbox pesan dari landing page
-│   └── UserController.php
+├── Constants/
+│   └── AKG.php                        — AKG target per kelompok (12 kelompok), proporsi waktu makan
+├── Http/
+│   ├── Controllers/
+│   │   ├── LandingController.php      — Halaman publik + form kontak
+│   │   ├── DashboardController.php    — Dashboard terpadu semua role operasional
+│   │   ├── MenuHarianController.php   — CRUD menu, uploadFoto, finalize
+│   │   ├── SimulasiController.php     — Simulasi + kalkulasi AJAX + simpan ke menu
+│   │   ├── BahanPanganController.php  — CRUD TKPI + apiSearch autocomplete
+│   │   ├── GiziController.php         — Monitoring gizi + API tren
+│   │   ├── BiayaController.php        — Monitoring biaya + harga bahan + API estimasi
+│   │   ├── AnggaranController.php     — Kelola anggaran porsi per kelompok
+│   │   ├── LaporanController.php      — Laporan + export Excel & PDF
+│   │   ├── BudgetAlertController.php  — Alert monitoring anggaran
+│   │   ├── ImportTkpiController.php   — Import CSV TKPI (preview + konfirmasi)
+│   │   ├── PesanMasukController.php   — Inbox pesan dari landing page
+│   │   └── UserController.php         — Kelola pengguna (superadmin)
+│   └── Middleware/
+│       └── RoleMiddleware.php          — Role-based access control
 ├── Models/
-│   ├── BahanPangan.php
-│   ├── MenuHarian.php
-│   ├── MenuDetailBahan.php
-│   ├── HargaBahan.php
-│   ├── AnggaranPorsi.php
-│   ├── ImportLog.php
-│   └── PesanMasuk.php
+│   ├── User.php                        — Role constants + helper methods
+│   ├── MenuHarian.php                  — totalGizi(), totalBiaya(), evaluasiGizi(), statusAnggaran()
+│   ├── BahanPangan.php                 — TKPI model + scope cari() + scopeKategori()
+│   ├── MenuDetailBahan.php             — Line items menu + snapshot harga
+│   ├── HargaBahan.php                  — hargaAktif() static method
+│   ├── AnggaranPorsi.php               — aktif() static method, KELOMPOK_LABELS
+│   ├── ImportLog.php                   — Riwayat import CSV
+│   └── PesanMasuk.php                  — Pesan masuk + scope unread()
+└── Providers/
+    └── AppServiceProvider.php          — View composer: navAlertCount, navAlerts, pesanMasukCount
+
 resources/views/
-├── landing.blade.php                  — Halaman publik (tanpa layout app)
-├── layouts/app.blade.php              — Layout utama (authenticated)
-├── partials/sidebar.blade.php
-├── dashboard/
-├── menu-harian/                       — index, show, edit (create via simulasi)
-├── simulasi/
+├── landing.blade.php                   — Halaman publik (standalone, tanpa layouts/app)
+├── layouts/app.blade.php               — Layout utama semua halaman authenticated
+├── partials/
+│   ├── sidebar.blade.php               — Navigasi sidebar role-based
+│   └── navbar.blade.php                — Navbar + badge alert + badge pesan
+├── dashboard/index.blade.php
+├── menu-harian/                        — index, show, edit (create via simulasi)
+├── simulasi/index.blade.php
 ├── gizi/
 ├── biaya/
 ├── anggaran/
@@ -593,8 +446,15 @@ resources/views/
 ├── import-tkpi/
 ├── pesan-masuk/
 └── users/
-database/seeders/data/
-└── tkpi_seeder.json                   — Data 845+ bahan pangan
+
+database/
+├── migrations/                         — 24 migration files (urutan timestamp)
+├── seeders/
+│   ├── DatabaseSeeder.php
+│   ├── UserSeeder.php                  — 4 akun default
+│   ├── BahanPanganSeeder.php           — 845+ data TKPI dari JSON
+│   └── MenuDummySeeder.php             — Data dummy untuk testing
+└── seeders/data/tkpi_seeder.json       — Data 845+ bahan pangan TKPI
 ```
 
 ---

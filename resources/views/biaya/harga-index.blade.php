@@ -61,7 +61,9 @@
                             <th>Berlaku Mulai</th>
                             <th>Berlaku Sampai</th>
                             <th>Keterangan</th>
-                            <th class="text-center">Aksi</th>
+                            @if(Auth::user()->isAkuntan())
+                                <th class="text-center">Aksi</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -79,8 +81,8 @@
                                 @endif
                             </td>
                             <td class="text-muted small">{{ $h->keterangan ?? '—' }}</td>
+                            @if(Auth::user()->isAkuntan())
                             <td class="text-center">
-                                @if(Auth::user()->isAkuntan())
                                 <form method="POST" action="{{ route('biaya.harga.destroy', $h) }}"
                                       onsubmit="return confirm('{{ $h->berlaku_sampai === null
                                           ? 'Hapus tarif aktif ini? Tarif sebelumnya akan diaktifkan kembali secara otomatis.'
@@ -91,12 +93,12 @@
                                         <i class="fa fa-trash"></i>
                                     </button>
                                 </form>
-                                @endif
                             </td>
+                            @endif
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="{{ Auth::user()->isAkuntan() ? 7 : 6 }}" class="text-center text-muted py-4">
                                 Belum ada data harga bahan.
                             </td>
                         </tr>

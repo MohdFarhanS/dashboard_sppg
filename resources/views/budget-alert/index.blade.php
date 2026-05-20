@@ -71,17 +71,11 @@
                     <label class="form-label small fw-semibold mb-1">Tingkat Keparahan</label>
                     <select name="severity" class="form-select form-select-sm"
                             onchange="this.form.submit()">
-                        <option value=""   {{ $severity === ''        ? 'selected' : '' }}>
-                            Semua Peringatan
+                        <option value=""      {{ $severity === ''      ? 'selected' : '' }}>
+                            Over + Mendekati Batas
                         </option>
-                        <option value="over"    {{ $severity === 'over'    ? 'selected' : '' }}>
-                            🚨 Over Budget
-                        </option>
-                        <option value="warning" {{ $severity === 'warning' ? 'selected' : '' }}>
-                            ⚠️ Mendekati Batas
-                        </option>
-                        <option value="aman"    {{ $severity === 'aman'    ? 'selected' : '' }}>
-                            ✅ Aman
+                        <option value="semua" {{ $severity === 'semua' ? 'selected' : '' }}>
+                            Semua (termasuk Aman)
                         </option>
                     </select>
                 </div>
@@ -150,13 +144,12 @@
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5 text-muted">
             <i class="fas fa-check-circle fa-3x mb-3 d-block" style="color:#0f4c81;opacity:.3;"></i>
-            @if($severity === '' )
+            @if($severity === 'semua')
+                <div class="fw-semibold">Belum ada menu final bulan ini</div>
+                <small>Data akan muncul setelah menu difinalisasi.</small>
+            @else
                 <div class="fw-semibold">Tidak ada peringatan bulan ini</div>
                 <small>Semua menu dalam batas anggaran 🎉</small>
-            @else
-                <div class="fw-semibold">Tidak ada menu dengan kategori ini</div>
-                <a href="{{ route('budget-alert.index', ['bulan' => $bulan]) }}"
-                   class="btn btn-sm btn-outline-primary mt-2">Tampilkan Semua</a>
             @endif
         </div>
     </div>
@@ -164,7 +157,8 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <small class="text-muted fw-semibold">
             Menampilkan {{ count($alerts) }} menu
-            @if($severity) — filter: <strong>{{ $severity }}</strong> @endif
+            @if($severity === 'semua') — filter: <strong>Semua (termasuk Aman)</strong>
+            @endif
         </small>
     </div>
 

@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Pagination\Paginator;
 use App\Models\MenuHarian;
 use App\Models\PesanMasuk;
 
@@ -24,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Paginator::useBootstrapFive();
+
         View::composer(['partials.navbar', 'partials.sidebar'], function ($view) {
             if (!Auth::check()) return;
             if (!Schema::hasTable('menu_harians')) {
