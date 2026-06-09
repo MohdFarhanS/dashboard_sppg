@@ -19,7 +19,10 @@
     <div class="topnav-right">
         {{-- Notifikasi Bell --}}
         @php
-            $totalNavBadge = ($navAlertCount ?? 0) + ($pesanMasukCount ?? 0);
+            $canReceiveBudgetAlerts = auth()->check() && auth()->user()->hasAnyRole(['ketua_sppg', 'akuntan']);
+            $budgetAlertCount = $canReceiveBudgetAlerts ? ($navAlertCount ?? 0) : 0;
+            $budgetAlerts = $canReceiveBudgetAlerts ? ($navAlerts ?? []) : [];
+            $totalNavBadge = $budgetAlertCount + ($pesanMasukCount ?? 0);
         @endphp
         <div class="dropdown">
             <button class="btn btn-sm position-relative dropdown-toggle"
@@ -72,8 +75,8 @@
                 @endif
 
                 {{-- Budget alerts --}}
-                @if(isset($navAlerts) && count($navAlerts) > 0)
-                    @foreach($navAlerts as $alert)
+                @if(count($budgetAlerts) > 0)
+                    @foreach($budgetAlerts as $alert)
                     <li>
                         <a href="{{ route('budget-alert.index') }}"
                            class="dropdown-item py-2 px-3"
@@ -102,6 +105,7 @@
                 @endif
 
                 {{-- Footer --}}
+                @if($canReceiveBudgetAlerts)
                 <li style="border-top:1px solid #f0f0f0;">
                     <a href="{{ route('budget-alert.index') }}"
                        class="dropdown-item text-center py-2"
@@ -109,6 +113,7 @@
                         Lihat Budget Alert →
                     </a>
                 </li>
+                @endif
             </ul>
         </div>
     </div>

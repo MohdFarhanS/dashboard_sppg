@@ -35,31 +35,34 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            $user  = Auth::user();
-            $today = today();
-        
-            $query = MenuHarian::with('detailBahans.bahanPangan')
-                ->where('status', 'final')
-                ->whereYear('tanggal',  $today->year)
-                ->whereMonth('tanggal', $today->month);
-
+            $user         = Auth::user();
             $totalAlert   = 0;
             $navAlerts    = [];
-            $dismissedIds = session('dismissed_alert_ids', []);
 
-            foreach ($query->get() as $menu) {
-                $s = $menu->statusAnggaran();
-                if (!in_array($s, ['over', 'warning'])) continue;
-                if (in_array($menu->id, $dismissedIds)) continue;
+            if ($user->hasAnyRole(['ketua_sppg', 'akuntan'])) {
+                $today = today();
+            
+                $query = MenuHarian::with('detailBahans.bahanPangan')
+                    ->where('status', 'final')
+                    ->whereYear('tanggal',  $today->year)
+                    ->whereMonth('tanggal', $today->month);
 
-                $totalAlert++;
-                $navAlerts[] = [
-                    'type'    => $s === 'over' ? 'danger' : 'warning',
-                    'msg'     => 'Menu ' . ($menu->nama_menu ?? $menu->tanggal->format('d/m/Y'))
-                                 . ($s === 'over' ? ' melebihi anggaran' : ' mendekati batas anggaran'),
-                    'time'    => $menu->tanggal->format('d/m/Y'),
-                    'menu_id' => $menu->id,
-                ];
+                $dismissedIds = session('dismissed_alert_ids', []);
+
+                foreach ($query->get() as $menu) {
+                    $s = $menu->statusAnggaran();
+                    if (!in_array($s, ['over', 'warning'])) continue;
+                    if (in_array($menu->id, $dismissedIds)) continue;
+
+                    $totalAlert++;
+                    $navAlerts[] = [
+                        'type'    => $s === 'over' ? 'danger' : 'warning',
+                        'msg'     => 'Menu ' . ($menu->nama_menu ?? $menu->tanggal->format('d/m/Y'))
+                                     . ($s === 'over' ? ' melebihi anggaran' : ' mendekati batas anggaran'),
+                        'time'    => $menu->tanggal->format('d/m/Y'),
+                        'menu_id' => $menu->id,
+                    ];
+                }
             }
         
             $view->with('navAlertCount', $totalAlert);

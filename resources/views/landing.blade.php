@@ -612,9 +612,9 @@
                                 </div>
                             </div>
                             <div class="mockup-stat">
-                                <div class="mockup-stat-label">Biaya / Porsi</div>
+                                <div class="mockup-stat-label">Menu Hari Ini</div>
                                 <div class="mockup-stat-val">
-                                    {{ $avgBiaya > 0 ? 'Rp ' . number_format($avgBiaya, 0, ',', '.') : '—' }}
+                                    {{ $todayMenus->count() }} <span style="font-size:.65rem;opacity:.6;font-weight:400">menu</span>
                                 </div>
                             </div>
                             <div class="mockup-stat">
