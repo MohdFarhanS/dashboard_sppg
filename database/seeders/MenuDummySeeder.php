@@ -9,7 +9,7 @@ use Carbon\Carbon;
 /**
  * MenuDummySeeder — v2 (fixed)
  *
- * Generate dummy data menu harian MBG untuk April sampai 10 Juni 2026.
+ * Generate dummy data menu harian MBG untuk April sampai 30 Juli 2026.
  * Disesuaikan dengan skema database aktual hasil inspect migration.
  *
  * Cara pakai:
@@ -141,7 +141,7 @@ class MenuDummySeeder extends Seeder
         $this->seedAnggaranPorsi($ketuaId, $now);
 
         $this->command->info('');
-        $this->command->info('─── [3/3] Menu Harian April - 10 Juni 2026 ───');
+        $this->command->info('─── [3/3] Menu Harian April - 30 Juli 2026 ───');
         $this->seedMenuHarian($ahliGiziId, $now);
 
         $this->command->info('');
@@ -250,7 +250,7 @@ class MenuDummySeeder extends Seeder
     private function seedMenuHarian(int $userId, $now): void
     {
         $startDate   = Carbon::create(2026, 4, 1);
-        $endDate     = Carbon::create(2026, 6, 10);
+        $endDate     = Carbon::create(2026, 7, 30);
         $templateIdx = 0;
         $created     = 0;
         $skipped     = 0;
@@ -311,6 +311,6 @@ class MenuDummySeeder extends Seeder
         $this->command->info("  ✓ Menu berhasil dibuat : {$created}");
         $this->command->info("  - Menu dilewati (duplikat): {$skipped}");
         $this->command->info("  ✓ Kelompok : " . implode(', ', array_keys($this->kelompokList)));
-        $this->command->info("  ✓ Periode  : Rabu 1 April - Rabu 10 Juni 2026 (hari kerja)");
+        $this->command->info("  ✓ Periode  : Rabu 1 April - Kamis 30 Juli 2026 (hari kerja)");
     }
 }

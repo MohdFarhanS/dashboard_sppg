@@ -107,15 +107,12 @@
                     $sortBy  = request('sort', 'kode');
                     $sortDir = request('dir', 'asc');
                     $nextDir = $sortDir === 'asc' ? 'desc' : 'asc';
-                    function sortUrl($col) {
-                        $sd = request('sort') === $col && request('dir', 'asc') === 'asc' ? 'desc' : 'asc';
-                        return request()->fullUrlWithQuery(['sort' => $col, 'dir' => $sd]);
-                    }
+                    $sortUrl = fn($col) => request()->fullUrlWithQuery(['sort' => $col, 'dir' => request('sort') === $col && request('dir', 'asc') === 'asc' ? 'desc' : 'asc'])
                 @endphp
                 <small class="text-muted me-2 align-self-center">Sort:</small>
-                <a href="{{ sortUrl('kode') }}" class="btn btn-outline-secondary btn-xs py-0 px-2 {{ $sortBy==='kode' ? 'active' : '' }}">Kode</a>
-                <a href="{{ sortUrl('nama_bahan') }}" class="btn btn-outline-secondary btn-xs py-0 px-2 {{ $sortBy==='nama_bahan' ? 'active' : '' }}">Nama</a>
-                <a href="{{ sortUrl('energi') }}" class="btn btn-outline-secondary btn-xs py-0 px-2 {{ $sortBy==='energi' ? 'active' : '' }}">Energi</a>
+                <a href="{{ $sortUrl('kode') }}" class="btn btn-outline-secondary btn-xs py-0 px-2 {{ $sortBy==='kode' ? 'active' : '' }}">Kode</a>
+                <a href="{{ $sortUrl('nama_bahan') }}" class="btn btn-outline-secondary btn-xs py-0 px-2 {{ $sortBy==='nama_bahan' ? 'active' : '' }}">Nama</a>
+                <a href="{{ $sortUrl('energi') }}" class="btn btn-outline-secondary btn-xs py-0 px-2 {{ $sortBy==='energi' ? 'active' : '' }}">Energi</a>
             </div>
         </div>
         <div class="card-body p-0">

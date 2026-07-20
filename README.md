@@ -40,7 +40,7 @@ Sistem monitoring berbasis web untuk program **Makan Bergizi Gratis (MBG)** yang
 
 ### Data Bahan Pangan (TKPI)
 
--   Database **Tabel Komposisi Pangan Indonesia** (845+ bahan pangan)
+-   Database **Tabel Komposisi Pangan Indonesia** (830+ bahan pangan)
 -   Informasi proksimat, mineral, dan vitamin per 100g BDD
 -   Pencarian dan filter berdasarkan nama, kode, dan kategori
 -   Toggle aktif/nonaktif bahan pangan
@@ -162,7 +162,7 @@ php artisan migrate
 php artisan db:seed
 ```
 
-Seeder akan membuat 4 akun pengguna dan 845+ data bahan pangan TKPI:
+Seeder akan membuat 4 akun pengguna dan 830+ data bahan pangan TKPI:
 
 | Email               | Password      | Role       |
 | ------------------- | ------------- | ---------- |
@@ -432,7 +432,7 @@ Landing Page (publik)
     │
 MenuHarian [Final] ←─────────────────────────────────────────┐
     │                                                         │
-    ├── MenuDetailBahan ──→ BahanPangan (TKPI, 845+ item)    │
+    ├── MenuDetailBahan ──→ BahanPangan (TKPI, 830+ item)    │
     │       └── snapshot harga_per_100g                       │
     │                ↑                                         │
     │           HargaBahan (time-based)  AnggaranPorsi ───────┘
@@ -449,7 +449,7 @@ MenuHarian [Final] ←───────────────────�
 
 ```
 users                — Pengguna sistem (4 role: superadmin, ketua_sppg, ahli_gizi, akuntan)
-bahan_pangans        — Data TKPI 845+ bahan pangan dengan nilai gizi per 100g BDD
+bahan_pangans        — Data TKPI 830+ bahan pangan dengan nilai gizi per 100g BDD
 menu_harians         — Menu harian; unique (tanggal, kelompok_sasaran); status: draft|final
 menu_detail_bahans   — Bahan-bahan dalam satu menu + snapshot harga saat finalisasi
 harga_bahans         — Harga bahan per 100g (time-based: berlaku_mulai, berlaku_sampai)
@@ -583,9 +583,9 @@ database/
 ├── seeders/
 │   ├── DatabaseSeeder.php
 │   ├── UserSeeder.php                  — 4 akun default
-│   ├── BahanPanganSeeder.php           — 845+ data TKPI dari JSON
+│   ├── BahanPanganSeeder.php           — 830+ data TKPI dari JSON
 │   └── MenuDummySeeder.php             — Data dummy untuk testing
-└── seeders/data/tkpi_seeder.json       — Data 845+ bahan pangan TKPI
+└── seeders/data/tkpi_seeder.json       — Data 830+ bahan pangan TKPI
 ```
 
 ---

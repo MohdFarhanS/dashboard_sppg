@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class BahanPangan extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'kode', 'kode_lama', 'nama_bahan', 'kategori', 'sub_kategori', 'sumber',
         'bdd', 'air', 'energi', 'protein', 'lemak', 'karbohidrat', 'serat', 'abu',

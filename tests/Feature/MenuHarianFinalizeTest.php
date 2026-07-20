@@ -9,6 +9,8 @@ use App\Models\MenuDetailBahan;
 use App\Models\MenuHarian;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MenuHarianFinalizeTest extends TestCase
@@ -16,7 +18,9 @@ class MenuHarianFinalizeTest extends TestCase
     use RefreshDatabase;
 
     private User $ahliGizi;
+
     private BahanPangan $bahan;
+
     private MenuHarian $menu;
 
     protected function setUp(): void
@@ -24,59 +28,59 @@ class MenuHarianFinalizeTest extends TestCase
         parent::setUp();
 
         $this->ahliGizi = User::factory()->create([
-            'role'      => 'ahli_gizi',
+            'role' => 'ahli_gizi',
             'unit_sppg' => 'SPPG Test',
         ]);
 
         $this->bahan = BahanPangan::create([
-            'kode'        => 'TES-001',
-            'nama_bahan'  => 'Nasi Putih (Test)',
-            'kategori'    => 'Serealia',
-            'bdd'         => 100,
-            'energi'      => 180,
-            'protein'     => 4,
-            'lemak'       => 0,
+            'kode' => 'TES-001',
+            'nama_bahan' => 'Nasi Putih (Test)',
+            'kategori' => 'Serealia',
+            'bdd' => 100,
+            'energi' => 180,
+            'protein' => 4,
+            'lemak' => 0,
             'karbohidrat' => 40,
-            'serat'       => 0,
-            'kalsium'     => 0,
-            'besi'        => 0,
-            'vit_c'       => 0,
-            'is_active'   => true,
+            'serat' => 0,
+            'kalsium' => 0,
+            'besi' => 0,
+            'vit_c' => 0,
+            'is_active' => true,
         ]);
 
         HargaBahan::create([
             'bahan_pangan_id' => $this->bahan->id,
-            'harga_per_100g'  => 2000,
-            'berlaku_mulai'   => '2026-01-01',
-            'berlaku_sampai'  => null,
+            'harga_per_100g' => 2000,
+            'berlaku_mulai' => '2026-01-01',
+            'berlaku_sampai' => null,
         ]);
 
         // Anggaran Januari: 10.000/porsi
         AnggaranPorsi::create([
-            'kelompok'           => 'sd4_ibu_menyusui',
+            'kelompok' => 'sd4_ibu_menyusui',
             'anggaran_per_porsi' => 10000,
-            'berlaku_mulai'      => '2026-01-01',
-            'berlaku_sampai'     => null,
-            'created_by'         => $this->ahliGizi->id,
+            'berlaku_mulai' => '2026-01-01',
+            'berlaku_sampai' => null,
+            'created_by' => $this->ahliGizi->id,
         ]);
 
         $this->menu = MenuHarian::create([
-            'tanggal'            => '2026-01-15',
-            'user_id'            => $this->ahliGizi->id,
-            'nama_menu'          => 'Menu Januari Test',
-            'status'             => 'draft',
-            'kelompok'           => 'sd4_ibu_menyusui',
-            'kelompok_sasaran'   => 'SD_4_6',
-            'jumlah_porsi'       => 1,
+            'tanggal' => '2026-01-15',
+            'user_id' => $this->ahliGizi->id,
+            'nama_menu' => 'Menu Januari Test',
+            'status' => 'draft',
+            'kelompok' => 'sd4_ibu_menyusui',
+            'kelompok_sasaran' => 'SD_4_6',
+            'jumlah_porsi' => 1,
             'anggaran_per_porsi' => 10000,
-            'foto_menu'          => 'menu-foto/test.jpg',
+            'foto_menu' => 'menu-foto/test.jpg',
         ]);
 
         MenuDetailBahan::create([
-            'menu_harian_id'  => $this->menu->id,
+            'menu_harian_id' => $this->menu->id,
             'bahan_pangan_id' => $this->bahan->id,
-            'jumlah_gram'     => 200,
-            'jumlah_porsi'    => 1,
+            'jumlah_gram' => 200,
+            'jumlah_porsi' => 1,
         ]);
     }
 
@@ -115,11 +119,11 @@ class MenuHarianFinalizeTest extends TestCase
             ->update(['berlaku_sampai' => '2026-01-31']);
 
         AnggaranPorsi::create([
-            'kelompok'           => 'sd4_ibu_menyusui',
+            'kelompok' => 'sd4_ibu_menyusui',
             'anggaran_per_porsi' => 14000,
-            'berlaku_mulai'      => '2026-02-01',
-            'berlaku_sampai'     => null,
-            'created_by'         => $this->ahliGizi->id,
+            'berlaku_mulai' => '2026-02-01',
+            'berlaku_sampai' => null,
+            'created_by' => $this->ahliGizi->id,
         ]);
 
         // Menu Januari yang sudah final harus tetap menampilkan anggaran 10.000
@@ -139,29 +143,29 @@ class MenuHarianFinalizeTest extends TestCase
             ->update(['berlaku_sampai' => '2026-01-31']);
 
         AnggaranPorsi::create([
-            'kelompok'           => 'sd4_ibu_menyusui',
+            'kelompok' => 'sd4_ibu_menyusui',
             'anggaran_per_porsi' => 14000,
-            'berlaku_mulai'      => '2026-02-01',
-            'berlaku_sampai'     => null,
-            'created_by'         => $this->ahliGizi->id,
+            'berlaku_mulai' => '2026-02-01',
+            'berlaku_sampai' => null,
+            'created_by' => $this->ahliGizi->id,
         ]);
 
         $menuFebruari = MenuHarian::create([
-            'tanggal'            => '2026-02-10',
-            'user_id'            => $this->ahliGizi->id,
-            'nama_menu'          => 'Menu Februari Test',
-            'status'             => 'draft',
-            'kelompok'           => 'sd4_ibu_menyusui',
-            'kelompok_sasaran'   => 'SD_4_6',
-            'jumlah_porsi'       => 1,
+            'tanggal' => '2026-02-10',
+            'user_id' => $this->ahliGizi->id,
+            'nama_menu' => 'Menu Februari Test',
+            'status' => 'draft',
+            'kelompok' => 'sd4_ibu_menyusui',
+            'kelompok_sasaran' => 'SD_4_6',
+            'jumlah_porsi' => 1,
             'anggaran_per_porsi' => 14000,
         ]);
 
         MenuDetailBahan::create([
-            'menu_harian_id'  => $menuFebruari->id,
+            'menu_harian_id' => $menuFebruari->id,
             'bahan_pangan_id' => $this->bahan->id,
-            'jumlah_gram'     => 200,
-            'jumlah_porsi'    => 1,
+            'jumlah_gram' => 200,
+            'jumlah_porsi' => 1,
         ]);
 
         $menuFebruari->load('detailBahans.bahanPangan');
@@ -207,9 +211,9 @@ class MenuHarianFinalizeTest extends TestCase
 
         HargaBahan::create([
             'bahan_pangan_id' => $this->bahan->id,
-            'harga_per_100g'  => 5000,
-            'berlaku_mulai'   => '2026-02-01',
-            'berlaku_sampai'  => null,
+            'harga_per_100g' => 5000,
+            'berlaku_mulai' => '2026-02-01',
+            'berlaku_sampai' => null,
         ]);
 
         // Menu Januari final harus tetap menghitung dengan harga Rp 2.000
@@ -239,13 +243,13 @@ class MenuHarianFinalizeTest extends TestCase
         $lamaId = HargaBahan::where('bahan_pangan_id', $this->bahan->id)->value('id');
         $this->assertNotNull($lamaId, 'Record harga awal harus ada.');
 
-        $akuntan = \App\Models\User::factory()->create(['role' => 'akuntan', 'unit_sppg' => 'SPPG Test']);
+        $akuntan = User::factory()->create(['role' => 'akuntan', 'unit_sppg' => 'SPPG Test']);
         $this->actingAs($akuntan)
             ->post(route('biaya.harga.store'), [
                 'bahan_pangan_id' => $this->bahan->id,
-                'harga_per_kg'    => 60000,  // Rp 6.000/100g
-                'berlaku_mulai'   => '2026-03-01',
-                'keterangan'      => '',
+                'harga_per_kg' => 60000,  // Rp 6.000/100g
+                'berlaku_mulai' => '2026-03-01',
+                'keterangan' => '',
             ])
             ->assertStatus(302);
 
@@ -272,16 +276,16 @@ class MenuHarianFinalizeTest extends TestCase
 
     public function test_hapus_tarif_aktif_mengaktifkan_tarif_sebelumnya(): void
     {
-        $akuntan = \App\Models\User::factory()->create(['role' => 'akuntan', 'unit_sppg' => 'SPPG Test']);
-        $lamaId  = HargaBahan::where('bahan_pangan_id', $this->bahan->id)->value('id');
+        $akuntan = User::factory()->create(['role' => 'akuntan', 'unit_sppg' => 'SPPG Test']);
+        $lamaId = HargaBahan::where('bahan_pangan_id', $this->bahan->id)->value('id');
 
         // Tambah tarif Maret → Januari auto-close
         $this->actingAs($akuntan)
             ->post(route('biaya.harga.store'), [
                 'bahan_pangan_id' => $this->bahan->id,
-                'harga_per_kg'    => 50000,
-                'berlaku_mulai'   => '2026-03-01',
-                'keterangan'      => '',
+                'harga_per_kg' => 50000,
+                'berlaku_mulai' => '2026-03-01',
+                'keterangan' => '',
             ])->assertStatus(302);
 
         $baruId = HargaBahan::where('bahan_pangan_id', $this->bahan->id)
@@ -331,11 +335,11 @@ class MenuHarianFinalizeTest extends TestCase
 
     public function test_upload_foto_berhasil_untuk_menu_draft(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
 
         $this->menu->update(['foto_menu' => null]);
 
-        $file = \Illuminate\Http\UploadedFile::fake()->create('menu.jpg', 100, 'image/jpeg');
+        $file = UploadedFile::fake()->create('menu.jpg', 100, 'image/jpeg');
 
         $this->actingAs($this->ahliGizi)
             ->post(route('menu-harian.upload-foto', $this->menu), [
@@ -346,15 +350,15 @@ class MenuHarianFinalizeTest extends TestCase
 
         $this->menu->refresh();
         $this->assertNotNull($this->menu->foto_menu);
-        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($this->menu->foto_menu);
+        Storage::disk('public')->assertExists($this->menu->foto_menu);
     }
 
     public function test_upload_foto_ditolak_untuk_menu_final(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
 
         $this->menu->update(['status' => 'final']);
-        $file = \Illuminate\Http\UploadedFile::fake()->create('menu.jpg', 100, 'image/jpeg');
+        $file = UploadedFile::fake()->create('menu.jpg', 100, 'image/jpeg');
 
         $this->actingAs($this->ahliGizi)
             ->post(route('menu-harian.upload-foto', $this->menu), [
@@ -366,13 +370,13 @@ class MenuHarianFinalizeTest extends TestCase
 
     public function test_hapus_tarif_historis_tidak_mengubah_tarif_aktif(): void
     {
-        $akuntan = \App\Models\User::factory()->create(['role' => 'akuntan', 'unit_sppg' => 'SPPG Test']);
-        $lamaId  = HargaBahan::where('bahan_pangan_id', $this->bahan->id)->value('id');
+        $akuntan = User::factory()->create(['role' => 'akuntan', 'unit_sppg' => 'SPPG Test']);
+        $lamaId = HargaBahan::where('bahan_pangan_id', $this->bahan->id)->value('id');
 
         $this->actingAs($akuntan)
             ->post(route('biaya.harga.store'), [
                 'bahan_pangan_id' => $this->bahan->id,
-                'harga_per_kg'    => 50000, 'berlaku_mulai' => '2026-03-01', 'keterangan' => '',
+                'harga_per_kg' => 50000, 'berlaku_mulai' => '2026-03-01', 'keterangan' => '',
             ])->assertStatus(302);
 
         $maretId = HargaBahan::where('bahan_pangan_id', $this->bahan->id)
@@ -381,7 +385,7 @@ class MenuHarianFinalizeTest extends TestCase
         $this->actingAs($akuntan)
             ->post(route('biaya.harga.store'), [
                 'bahan_pangan_id' => $this->bahan->id,
-                'harga_per_kg'    => 60000, 'berlaku_mulai' => '2026-04-01', 'keterangan' => '',
+                'harga_per_kg' => 60000, 'berlaku_mulai' => '2026-04-01', 'keterangan' => '',
             ])->assertStatus(302);
 
         $aprilId = HargaBahan::where('bahan_pangan_id', $this->bahan->id)
@@ -399,7 +403,7 @@ class MenuHarianFinalizeTest extends TestCase
 
     public function test_ketua_sppg_tidak_bisa_tambah_atau_hapus_harga(): void
     {
-        $ketua  = \App\Models\User::factory()->create(['role' => 'ketua_sppg', 'unit_sppg' => 'SPPG Test']);
+        $ketua = User::factory()->create(['role' => 'ketua_sppg', 'unit_sppg' => 'SPPG Test']);
         $lamaId = HargaBahan::where('bahan_pangan_id', $this->bahan->id)->value('id');
 
         // GET create → 403
@@ -411,8 +415,8 @@ class MenuHarianFinalizeTest extends TestCase
         $this->actingAs($ketua)
             ->post(route('biaya.harga.store'), [
                 'bahan_pangan_id' => $this->bahan->id,
-                'harga_per_kg'    => 30000,
-                'berlaku_mulai'   => '2026-06-01',
+                'harga_per_kg' => 30000,
+                'berlaku_mulai' => '2026-06-01',
             ])->assertForbidden();
 
         // DELETE → 403
@@ -423,12 +427,60 @@ class MenuHarianFinalizeTest extends TestCase
 
     public function test_edit_harga_selalu_diredirect(): void
     {
-        $akuntan = \App\Models\User::factory()->create(['role' => 'akuntan', 'unit_sppg' => 'SPPG Test']);
-        $lamaId  = HargaBahan::where('bahan_pangan_id', $this->bahan->id)->value('id');
+        $akuntan = User::factory()->create(['role' => 'akuntan', 'unit_sppg' => 'SPPG Test']);
+        $lamaId = HargaBahan::where('bahan_pangan_id', $this->bahan->id)->value('id');
 
         // GET edit → redirect (tarif immutable, tidak bisa diedit)
         $this->actingAs($akuntan)
             ->get(route('biaya.harga.edit', $lamaId))
             ->assertRedirect(route('biaya.harga.index'));
+    }
+
+    public function test_update_menu_final_ditolak(): void
+    {
+        $this->menu->update(['status' => 'final']);
+
+        $this->actingAs($this->ahliGizi)
+            ->put(route('menu-harian.update', $this->menu), [
+                'status' => 'draft',
+            ])
+            ->assertRedirect(route('menu-harian.show', $this->menu))
+            ->assertSessionHas('error');
+
+        $this->menu->refresh();
+        $this->assertEquals('final', $this->menu->status, 'Menu final tidak boleh berubah jadi draft lewat update().');
+    }
+
+    public function test_destroy_menu_final_ditolak(): void
+    {
+        $this->menu->update(['status' => 'final']);
+
+        $this->actingAs($this->ahliGizi)
+            ->delete(route('menu-harian.destroy', $this->menu))
+            ->assertRedirect(route('menu-harian.show', $this->menu))
+            ->assertSessionHas('error');
+
+        $this->assertNotNull(MenuHarian::find($this->menu->id), 'Menu final tidak boleh terhapus.');
+    }
+
+    public function test_simpan_simulasi_menu_final_ditolak(): void
+    {
+        $this->menu->update(['status' => 'final']);
+
+        $this->actingAs($this->ahliGizi)
+            ->post(route('simulasi.simpan'), [
+                'tanggal' => '2026-01-15',
+                'catatan' => 'Test',
+                'jumlah_porsi' => 1,
+                'menu_id' => $this->menu->id,
+                'kelompok_sasaran' => 'SD_4_6',
+                'bahans' => [
+                    ['id' => $this->bahan->id, 'gram' => 200, 'porsi' => 1],
+                ],
+            ])
+            ->assertStatus(422);
+
+        $this->menu->refresh();
+        $this->assertEquals('final', $this->menu->status);
     }
 }

@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
             'email'        => 'superadmin@mbg.id',
             'password'     => Hash::make('password123'),
             'role'         => 'superadmin',
-            'unit_sppg'    => null,   // superadmin tidak terikat unit SPPG
+            'unit_sppg'    => null,
             'is_active'    => true,
         ]);
 

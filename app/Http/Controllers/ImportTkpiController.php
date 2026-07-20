@@ -6,46 +6,46 @@ use App\Models\BahanPangan;
 use App\Models\ImportLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 class ImportTkpiController extends Controller
 {
     // Mapping kolom CSV → kolom database (sesuai kolom tabel bahan_pangans)
     const KOLOM_MAP = [
-        'nama_bahan'  => ['nama_bahan', 'nama bahan', 'food name', 'bahan pangan', 'nama'],
-        'kategori'    => ['kategori', 'category', 'golongan', 'kelompok pangan'],
-        'sub_kategori'=> ['sub_kategori', 'sub_category', 'jenis', 'type'],
-        'kode_lama'   => ['kode_lama', 'kode lama', 'old code', 'kode_asli'],
-        'sumber'      => ['sumber', 'source', 'sumber data', 'referensi'],
-        'bdd'         => ['bdd', 'berat dapat dimakan', '%bdd', 'edible portion'],
-        'air'         => ['air', 'water', 'moisture'],
-        'energi'      => ['energi', 'energy', 'kalori', 'kal', 'kkal'],
-        'protein'     => ['protein'],
-        'lemak'       => ['lemak', 'fat', 'total fat'],
+        'nama_bahan' => ['nama_bahan', 'nama bahan', 'food name', 'bahan pangan', 'nama'],
+        'kategori' => ['kategori', 'category', 'golongan', 'kelompok pangan'],
+        'sub_kategori' => ['sub_kategori', 'sub_category', 'jenis', 'type'],
+        'kode_lama' => ['kode_lama', 'kode lama', 'old code', 'kode_asli'],
+        'sumber' => ['sumber', 'source', 'sumber data', 'referensi'],
+        'bdd' => ['bdd', 'berat dapat dimakan', '%bdd', 'edible portion'],
+        'air' => ['air', 'water', 'moisture'],
+        'energi' => ['energi', 'energy', 'kalori', 'kal', 'kkal'],
+        'protein' => ['protein'],
+        'lemak' => ['lemak', 'fat', 'total fat'],
         'karbohidrat' => ['karbohidrat', 'carbohydrate', 'karbo', 'kh'],
-        'serat'       => ['serat', 'fiber', 'dietary fiber', 'serat pangan'],
-        'abu'         => ['abu', 'ash'],
-        'kalsium'     => ['kalsium', 'calcium', 'ca'],
-        'fosfor'      => ['fosfor', 'phosphorus', 'phosphor', 'p'],
-        'besi'        => ['besi', 'iron', 'fe', 'zat besi'],
-        'natrium'     => ['natrium', 'sodium', 'na'],
-        'kalium'      => ['kalium', 'potassium', 'k'],
-        'tembaga'     => ['tembaga', 'copper', 'cu'],
-        'seng'        => ['seng', 'zinc', 'zn'],
-        'retinol'     => ['retinol', 'vitamin a', 'vit a', 'vit_a'],
-        'b_karoten'   => ['b_karoten', 'b karoten', 'beta karoten', 'beta carotene', 'karoten'],
-        'kar_total'   => ['kar_total', 'karoten total', 'total carotene', 'total karoten'],
-        'thiamin'     => ['thiamin', 'thiamine', 'vitamin b1', 'vit b1', 'vit_b1', 'b1'],
-        'riboflavin'  => ['riboflavin', 'vitamin b2', 'vit b2', 'vit_b2', 'b2'],
-        'niasin'      => ['niasin', 'niacin', 'vitamin b3', 'vit b3', 'b3'],
-        'vit_c'       => ['vit_c', 'vitamin c', 'vit c', 'vitc', 'asam askorbat'],
+        'serat' => ['serat', 'fiber', 'dietary fiber', 'serat pangan'],
+        'abu' => ['abu', 'ash'],
+        'kalsium' => ['kalsium', 'calcium', 'ca'],
+        'fosfor' => ['fosfor', 'phosphorus', 'phosphor', 'p'],
+        'besi' => ['besi', 'iron', 'fe', 'zat besi'],
+        'natrium' => ['natrium', 'sodium', 'na'],
+        'kalium' => ['kalium', 'potassium', 'k'],
+        'tembaga' => ['tembaga', 'copper', 'cu'],
+        'seng' => ['seng', 'zinc', 'zn'],
+        'retinol' => ['retinol', 'vitamin a', 'vit a', 'vit_a'],
+        'b_karoten' => ['b_karoten', 'b karoten', 'beta karoten', 'beta carotene', 'karoten'],
+        'kar_total' => ['kar_total', 'karoten total', 'total carotene', 'total karoten'],
+        'thiamin' => ['thiamin', 'thiamine', 'vitamin b1', 'vit b1', 'vit_b1', 'b1'],
+        'riboflavin' => ['riboflavin', 'vitamin b2', 'vit b2', 'vit_b2', 'b2'],
+        'niasin' => ['niasin', 'niacin', 'vitamin b3', 'vit b3', 'b3'],
+        'vit_c' => ['vit_c', 'vitamin c', 'vit c', 'vitc', 'asam askorbat'],
     ];
-    
+
     public function index()
     {
         // Route dilindungi middleware role:ketua_sppg
         $totalBahan = BahanPangan::count();
-        $riwayat    = ImportLog::with('user')->latest()->limit(10)->get();
+        $riwayat = ImportLog::with('user')->latest()->limit(10)->get();
+
         return view('import-tkpi.index', compact('totalBahan', 'riwayat'));
     }
 
@@ -55,12 +55,12 @@ class ImportTkpiController extends Controller
             'csv_file' => 'required|file|max:5120',
         ], [
             'csv_file.required' => 'File CSV wajib dipilih.',
-            'csv_file.mimes'    => 'Format harus .csv atau .txt',
-            'csv_file.max'      => 'Ukuran file maksimal 5MB.',
+            'csv_file.mimes' => 'Format harus .csv atau .txt',
+            'csv_file.max' => 'Ukuran file maksimal 5MB.',
         ]);
 
         $ekstensi = strtolower($request->file('csv_file')->getClientOriginalExtension());
-        if (!in_array($ekstensi, ['csv', 'txt'])) {
+        if (! in_array($ekstensi, ['csv', 'txt'])) {
             return back()->withErrors(['csv_file' => 'Format harus .csv atau .txt']);
         }
 
@@ -71,11 +71,11 @@ class ImportTkpiController extends Controller
             return back()->withErrors(['csv_file' => $error]);
         }
 
-        $mapped  = $this->mapKolom($headers);
+        $mapped = $this->mapKolom($headers);
         $preview = array_slice($rows, 0, 10); // max 10 baris preview
 
         // Simpan path sementara di session
-        $tmpPath = storage_path('app/tmp_import_' . auth()->id() . '.csv');
+        $tmpPath = storage_path('app/tmp_import_'.auth()->id().'.csv');
         copy($path, $tmpPath);
 
         $originalFilename = $request->file('csv_file')->getClientOriginalName();
@@ -83,31 +83,31 @@ class ImportTkpiController extends Controller
 
         return view('import-tkpi.index', [
             'totalBahan' => BahanPangan::count(),
-            'riwayat'    => ImportLog::with('user')->latest()->limit(10)->get(),
-            'headers'    => $headers,
-            'preview'    => $preview,
-            'mapped'     => $mapped,
-            'totalRows'  => count($rows),
+            'riwayat' => ImportLog::with('user')->latest()->limit(10)->get(),
+            'headers' => $headers,
+            'preview' => $preview,
+            'mapped' => $mapped,
+            'totalRows' => count($rows),
         ]);
     }
 
     public function import(Request $request)
     {
-        $tmpPath  = session('import_tmp');
-        $mapped   = session('import_mapped');
+        $tmpPath = session('import_tmp');
+        $mapped = session('import_mapped');
         $filename = session('import_filename', 'unknown.csv');
-        $mode     = $request->input('mode', 'skip'); // skip | update
+        $mode = $request->input('mode', 'skip'); // skip | update
 
-        if (!$tmpPath || !file_exists($tmpPath)) {
+        if (! $tmpPath || ! file_exists($tmpPath)) {
             return back()->withErrors(['csv_file' => 'Session preview sudah kedaluwarsa. Upload ulang file CSV.']);
         }
 
         [$headers, $rows] = $this->parseCsv($tmpPath);
 
         $inserted = 0;
-        $updated  = 0;
-        $skipped  = 0;
-        $errors   = [];
+        $updated = 0;
+        $skipped = 0;
+        $errors = [];
 
         DB::beginTransaction();
         try {
@@ -115,8 +115,9 @@ class ImportTkpiController extends Controller
                 $data = $this->mapRow($headers, $row, $mapped);
 
                 if (empty($data['nama_bahan'])) {
-                    $errors[] = "Baris " . ($idx + 2) . ": nama_bahan kosong, dilewati.";
+                    $errors[] = 'Baris '.($idx + 2).': nama_bahan kosong, dilewati.';
                     $skipped++;
+
                     continue;
                 }
 
@@ -138,8 +139,9 @@ class ImportTkpiController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->route('import-tkpi.index')
-                ->withErrors(['csv_file' => 'Gagal import: ' . $e->getMessage()]);
+                ->withErrors(['csv_file' => 'Gagal import: '.$e->getMessage()]);
         }
 
         // Hapus file tmp
@@ -149,12 +151,12 @@ class ImportTkpiController extends Controller
         // Simpan ringkasan log ke database
         try {
             ImportLog::create([
-                'user_id'  => auth()->id(),
+                'user_id' => auth()->id(),
                 'filename' => $filename,
                 'inserted' => $inserted,
-                'updated'  => $updated,
-                'skipped'  => $skipped,
-                'mode'     => $mode,
+                'updated' => $updated,
+                'skipped' => $skipped,
+                'mode' => $mode,
             ]);
         } catch (\Exception $e) {
             // Log tidak kritis — data bahan_pangans tetap tersimpan
@@ -170,7 +172,9 @@ class ImportTkpiController extends Controller
     private function parseCsv(string $path): array
     {
         $handle = fopen($path, 'r');
-        if (!$handle) return [[], [], 'File tidak dapat dibaca.'];
+        if (! $handle) {
+            return [[], [], 'File tidak dapat dibaca.'];
+        }
 
         // Deteksi delimiter
         $firstLine = fgets($handle);
@@ -178,24 +182,30 @@ class ImportTkpiController extends Controller
         $delimiter = substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
 
         $headers = [];
-        $rows    = [];
+        $rows = [];
 
         while (($line = fgetcsv($handle, 2000, $delimiter)) !== false) {
             if (empty($headers)) {
-                $headers = array_map(function($h) {
+                $headers = array_map(function ($h) {
                     // Strip BOM, whitespace, dan karakter tidak terlihat
                     $h = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', trim($h));
+
                     return strtolower($h);
                 }, $line);
+
                 continue;
             }
-            if (count(array_filter($line)) === 0) continue;
+            if (count(array_filter($line)) === 0) {
+                continue;
+            }
             $rows[] = $line;
         }
 
         fclose($handle);
 
-        if (empty($headers)) return [[], [], 'File CSV kosong atau format tidak valid.'];
+        if (empty($headers)) {
+            return [[], [], 'File CSV kosong atau format tidak valid.'];
+        }
 
         return [$headers, $rows, null];
     }
@@ -211,6 +221,7 @@ class ImportTkpiController extends Controller
                 }
             }
         }
+
         return $mapped;
     }
 
@@ -220,6 +231,7 @@ class ImportTkpiController extends Controller
         foreach ($mapped as $dbCol => $idx) {
             $data[$dbCol] = isset($row[$idx]) ? trim($row[$idx]) : null;
         }
+
         return $data;
     }
 
@@ -236,12 +248,13 @@ class ImportTkpiController extends Controller
             }
         }
 
-        // Generate kode maks 10 karakter
+        // Generate kode maks 10 karakter, pastikan unik
         if (empty($data['kode'])) {
             $singkatan = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $data['nama_bahan'] ?? 'BHN'), 0, 6));
-            $data['kode'] = $singkatan . rand(1000, 9999);
-            // Pastikan tidak melebihi 10 karakter
-            $data['kode'] = substr($data['kode'], 0, 10);
+            do {
+                $kode = substr($singkatan.rand(1000, 9999), 0, 10);
+            } while (BahanPangan::where('kode', $kode)->exists());
+            $data['kode'] = $kode;
         }
 
         // Default kategori
@@ -249,6 +262,6 @@ class ImportTkpiController extends Controller
             $data['kategori'] = 'Umum';
         }
 
-        return array_filter($data, fn($v) => $v !== null && $v !== '');
+        return array_filter($data, fn ($v) => $v !== null && $v !== '');
     }
 }

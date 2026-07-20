@@ -82,13 +82,11 @@
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Status</label>
                             <select name="status" class="form-select">
-                                <option value="draft" {{ $menuHarian->status=='draft'?'selected':'' }}>
+                                <option value="draft" selected>
                                     Draft (bisa diedit)
                                 </option>
-                                <option value="final" {{ $menuHarian->status=='final'?'selected':'' }}>
-                                    Final (terkunci)
-                                </option>
                             </select>
+                            <div class="form-text">Finalisasi dilakukan lewat tombol "Finalisasi" di halaman detail menu.</div>
                         </div>
 
                         {{-- Estimasi gizi --}}

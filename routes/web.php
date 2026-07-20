@@ -63,21 +63,25 @@ Route::middleware('auth')->group(function () {
 
         // ── Menu Harian ───────────────────────────────────────────────────────
         Route::prefix('menu-harian')->name('menu-harian.')->group(function () {
-            // View: ketua_sppg + ahli_gizi (akuntan tidak punya akses)
+            // View: ketua_sppg + ahli_gizi (index — tanpa wildcard)
             Route::middleware('role:ketua_sppg,ahli_gizi')->group(function () {
-                Route::get('/',             [MenuHarianController::class, 'index'])->name('index');
-                Route::get('/{menuHarian}', [MenuHarianController::class, 'show'])->name('show');
+                Route::get('/', [MenuHarianController::class, 'index'])->name('index');
             });
 
-            // Input & manajemen: ahli_gizi saja
+            // Input & manajemen: ahli_gizi saja (rute spesifik SEBELUM wildcard)
             Route::middleware('role:ahli_gizi')->group(function () {
-                Route::get('/create',                  [MenuHarianController::class, 'create'])->name('create');
-                Route::post('/',                       [MenuHarianController::class, 'store'])->name('store');
-                Route::get('/{menuHarian}/edit',       [MenuHarianController::class, 'edit'])->name('edit');
-                Route::put('/{menuHarian}',            [MenuHarianController::class, 'update'])->name('update');
-                Route::delete('/{menuHarian}',             [MenuHarianController::class, 'destroy'])->name('destroy');
-                Route::patch('/{menuHarian}/finalize',    [MenuHarianController::class, 'finalize'])->name('finalize');
-                Route::post('/{menuHarian}/upload-foto',  [MenuHarianController::class, 'uploadFoto'])->name('upload-foto');
+                Route::get('/create',                 [MenuHarianController::class, 'create'])->name('create');
+                Route::post('/',                      [MenuHarianController::class, 'store'])->name('store');
+                Route::get('/{menuHarian}/edit',      [MenuHarianController::class, 'edit'])->name('edit');
+                Route::put('/{menuHarian}',           [MenuHarianController::class, 'update'])->name('update');
+                Route::delete('/{menuHarian}',        [MenuHarianController::class, 'destroy'])->name('destroy');
+                Route::patch('/{menuHarian}/finalize',   [MenuHarianController::class, 'finalize'])->name('finalize');
+                Route::post('/{menuHarian}/upload-foto', [MenuHarianController::class, 'uploadFoto'])->name('upload-foto');
+            });
+
+            // Wildcard show setelah semua rute spesifik
+            Route::middleware('role:ketua_sppg,ahli_gizi')->group(function () {
+                Route::get('/{menuHarian}', [MenuHarianController::class, 'show'])->name('show');
             });
         });
 

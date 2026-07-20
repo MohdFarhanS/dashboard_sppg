@@ -194,6 +194,10 @@ class BahanPanganController extends Controller
         $q     = $request->input('q', '');
         $limit = $request->input('limit', 8);
 
+        if (mb_strlen($q) < 2) {
+            return response()->json([]);
+        }
+
         $tanggal = today()->toDateString();
 
         $results = BahanPangan::where('is_active', true)
@@ -245,7 +249,7 @@ class BahanPanganController extends Controller
     }
 
     /**
-     * Helper cadangan — route sudah dilindungi middleware role:ketua_sppg
+     * Helper cadangan Ã¢â‚¬â€ route sudah dilindungi middleware role:ketua_sppg
      */
     private function checkAdminRole(): void
     {
