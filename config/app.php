@@ -124,4 +124,19 @@ return [
     ],
 
     'unit_sppg' => env('UNIT_SPPG', 'SPPG Utama'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Demo Mode (portfolio/showcase instance)
+    |--------------------------------------------------------------------------
+    |
+    | Saat DEMO_MODE=true, command `demo:reset` diizinkan mem-wipe database
+    | dan mengisi ulang data dummy. Token dipakai buat proteksi endpoint HTTP
+    | yang memicu reset dari external cron (mis. cron-job.org).
+    |
+    */
+
+    'demo_mode' => (bool) env('DEMO_MODE', false),
+
+    'demo_reset_token' => env('DEMO_RESET_TOKEN'),
 ];

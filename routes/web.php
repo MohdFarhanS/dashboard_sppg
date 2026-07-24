@@ -14,6 +14,7 @@ use App\Http\Controllers\MenuHarianController;
 use App\Http\Controllers\PesanMasukController;
 use App\Http\Controllers\SimulasiController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Artisan;
 
 // ── Halaman publik ────────────────────────────────────────────────────────────
 Route::get('/', [LandingController::class, 'index'])->name('landing');
@@ -22,6 +23,20 @@ Route::post('/pesan', [LandingController::class, 'kirimPesan'])->name('landing.k
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// ── Trigger reset data demo (dipanggil external cron, mis. cron-job.org) ───────
+// Aktif hanya kalau DEMO_MODE=true. Token wajib cocok, bukan cuma di URL biasa.
+Route::get('/system/demo-reset/{token}', function (string $token) {
+    $expected = config('app.demo_reset_token');
+
+    if (! config('app.demo_mode') || ! $expected || ! hash_equals((string) $expected, $token)) {
+        abort(404);
+    }
+
+    Artisan::call('demo:reset');
+
+    return response('OK');
+})->middleware('throttle:3,60')->name('system.demo-reset');
 
 Route::middleware('auth')->group(function () {
 
