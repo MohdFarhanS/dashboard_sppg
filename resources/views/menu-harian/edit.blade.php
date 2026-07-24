@@ -222,6 +222,13 @@ function escapeHtml(str) {
     }[c]));
 }
 
+function skeletonAutocompleteRows(n = 3) {
+    return Array.from({ length: n }).map(() => `
+        <div class="autocomplete-item">
+            <span class="skeleton d-block" style="width:70%;height:12px"></span>
+        </div>`).join('');
+}
+
 document.getElementById('btn-tambah-bahan').addEventListener('click', () => tambahBahan());
 
 function tambahBahan(prefillData = null) {
@@ -278,6 +285,8 @@ function tambahBahan(prefillData = null) {
 }
 
 async function fetchBahan(q, acList, row, idx) {
+    acList.innerHTML = skeletonAutocompleteRows();
+    acList.classList.remove('d-none');
     try {
         const res = await fetch(`${API_BAHAN_SEARCH_URL}?q=${encodeURIComponent(q)}&limit=8`);
         if (!res.ok) {

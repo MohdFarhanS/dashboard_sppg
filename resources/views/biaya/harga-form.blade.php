@@ -109,6 +109,9 @@
 
         if (q.length < 2) { dropdown.style.display = 'none'; return; }
 
+        dropdown.innerHTML = skeletonDropdownRows();
+        dropdown.style.display = 'block';
+
         debounceTimer = setTimeout(async () => {
             try {
                 const res  = await fetch(`${API_BAHAN_SEARCH_URL}?q=${encodeURIComponent(q)}&limit=15`);
@@ -118,6 +121,13 @@
             } catch { dropdown.style.display = 'none'; }
         }, 250);
     });
+
+    function skeletonDropdownRows(n = 3) {
+        return Array.from({ length: n }).map(() => `
+            <span class="list-group-item">
+                <span class="skeleton d-block" style="width:70%;height:12px"></span>
+            </span>`).join('');
+    }
 
     function renderDropdown(items) {
         dropdown.innerHTML = '';

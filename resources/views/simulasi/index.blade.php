@@ -250,6 +250,32 @@
                     </div>
                 </div>
 
+                {{-- Skeleton saat kalkulasi pertama kali (tersembunyi dulu) --}}
+                <div id="panel-skeleton" class="d-none">
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header border-0 py-2" style="background:var(--primary-pale)">
+                            <span class="skeleton" style="width:200px;height:14px"></span>
+                        </div>
+                        <div class="card-body pb-2">
+                            @for ($i = 0; $i < 4; $i++)
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="skeleton" style="width:100px;height:10px"></span>
+                                    <span class="skeleton" style="width:50px;height:10px"></span>
+                                </div>
+                                <span class="skeleton d-block" style="width:100%;height:8px"></span>
+                            </div>
+                            @endfor
+                        </div>
+                    </div>
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <span class="skeleton d-block mb-2" style="width:60%;height:12px"></span>
+                            <span class="skeleton d-block" style="width:100%;height:34px;border-radius:8px"></span>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Panel hasil (tersembunyi dulu) --}}
                 <div id="panel-hasil" class="d-none">
 
@@ -398,6 +424,14 @@ function escapeHtml(str) {
     }[c]));
 }
 
+function skeletonAutocompleteRows(n = 3) {
+    return Array.from({ length: n }).map(() => `
+        <div class="autocomplete-item">
+            <span class="skeleton" style="width:40px;height:16px"></span>
+            <span class="skeleton flex-grow-1" style="height:12px"></span>
+        </div>`).join('');
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // TAMBAH / HAPUS BAHAN
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -452,6 +486,8 @@ function tambahBahan(skipFocus = false) {
 }
 
 async function fetchBahan(q, acList, row) {
+    acList.innerHTML = skeletonAutocompleteRows();
+    acList.classList.remove('d-none');
     try {
         const res = await fetch(`${API_BAHAN_SEARCH_URL}?q=${encodeURIComponent(q)}&limit=8`);
         if (!res.ok) {
@@ -543,8 +579,14 @@ document.getElementById('btn-hitung').addEventListener('click', async () => {
                         || '{{ csrf_token() }}',
     };
 
-    // UI loading
-    document.getElementById('panel-hasil').classList.add('loading');
+    // UI loading — panggilan pertama tampilkan skeleton, panggilan berikutnya redupkan panel yang ada
+    const isFirstCalc = document.getElementById('panel-hasil').classList.contains('d-none');
+    if (isFirstCalc) {
+        document.getElementById('panel-placeholder').classList.add('d-none');
+        document.getElementById('panel-skeleton').classList.remove('d-none');
+    } else {
+        document.getElementById('panel-hasil').classList.add('loading');
+    }
 
     try {
         const res  = await fetch('{{ route("simulasi.kalkulasi") }}', {
@@ -568,6 +610,10 @@ document.getElementById('btn-hitung').addEventListener('click', async () => {
         alert('Gagal menghubungi server.');
     } finally {
         document.getElementById('panel-hasil').classList.remove('loading');
+        document.getElementById('panel-skeleton').classList.add('d-none');
+        if (document.getElementById('panel-hasil').classList.contains('d-none')) {
+            document.getElementById('panel-placeholder').classList.remove('d-none');
+        }
     }
 });
 
@@ -891,6 +937,7 @@ document.getElementById('btn-reset').addEventListener('click', () => {
             <i class="fas fa-carrot fa-2x mb-2 d-block opacity-25"></i>
             Belum ada bahan — klik tombol di bawah untuk mulai
         </div>`;
+    document.getElementById('panel-skeleton').classList.add('d-none');
     document.getElementById('panel-placeholder').classList.remove('d-none');
     document.getElementById('panel-hasil').classList.add('d-none');
     document.getElementById('card-detail').classList.add('d-none');

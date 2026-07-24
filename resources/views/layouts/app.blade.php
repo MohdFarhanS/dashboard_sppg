@@ -197,6 +197,19 @@
         .badge-budget-warning { background: #fff8e1; color: #f57c00; }
         .badge-budget-over    { background: #fce4e4; color: #c62828; }
 
+        /* ── SKELETON LOADING ── */
+        .skeleton {
+            display: inline-block;
+            background: linear-gradient(90deg, #e9ecef 25%, #f4f6f8 37%, #e9ecef 63%);
+            background-size: 400% 100%;
+            animation: skeleton-shimmer 1.4s ease infinite;
+            border-radius: 4px;
+        }
+        @keyframes skeleton-shimmer {
+            0%   { background-position: 100% 50%; }
+            100% { background-position: 0 50%; }
+        }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             #sidebar { transform: translateX(-100%); }
