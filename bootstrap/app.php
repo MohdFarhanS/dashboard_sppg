@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
         ]);
+
+        // Dipanggil external cron tanpa session Laravel — proteksi pakai
+        // token header sendiri (hash_equals), bukan CSRF berbasis session.
+        $middleware->validateCsrfTokens(except: [
+            'system/demo-reset',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

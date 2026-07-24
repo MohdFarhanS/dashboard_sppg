@@ -14,6 +14,7 @@ use App\Http\Controllers\MenuHarianController;
 use App\Http\Controllers\PesanMasukController;
 use App\Http\Controllers\SimulasiController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
 // ── Halaman publik ────────────────────────────────────────────────────────────
@@ -25,18 +26,24 @@ Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // ── Trigger reset data demo (dipanggil external cron, mis. cron-job.org) ───────
-// Aktif hanya kalau DEMO_MODE=true. Token wajib cocok, bukan cuma di URL biasa.
-Route::get('/system/demo-reset/{token}', function (string $token) {
-    $expected = config('app.demo_reset_token');
+// Route ini cuma terdaftar sama sekali kalau DEMO_MODE=true — di instance
+// production asli, route gak ada (404 murni, bukan cek token yang gagal).
+// POST + token via header (bukan GET/URL) biar gak ke-trigger link
+// preview bot/prefetch dan gak ke-log di access log/riwayat browser.
+if (config('app.demo_mode')) {
+    Route::post('/system/demo-reset', function (Request $request) {
+        $expected = (string) config('app.demo_reset_token');
+        $given = (string) $request->header('X-Demo-Reset-Token', '');
 
-    if (! config('app.demo_mode') || ! $expected || ! hash_equals((string) $expected, $token)) {
-        abort(404);
-    }
+        if ($expected === '' || $given === '' || ! hash_equals($expected, $given)) {
+            abort(404);
+        }
 
-    Artisan::call('demo:reset');
+        Artisan::call('demo:reset');
 
-    return response('OK');
-})->middleware('throttle:3,60')->name('system.demo-reset');
+        return response('OK');
+    })->middleware('throttle:3,60')->name('system.demo-reset');
+}
 
 Route::middleware('auth')->group(function () {
 
