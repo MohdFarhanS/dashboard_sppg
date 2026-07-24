@@ -93,49 +93,9 @@
                             </div>
                         </td>
                     </tr>
-
-                    {{-- Modal Reset Password --}}
-                    <div class="modal fade" id="modalReset{{ $user->id }}" tabindex="-1">
-                        <div class="modal-dialog modal-sm">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h6 class="modal-title fw-bold">Reset Password</h6>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <form action="{{ route('users.reset-password', $user) }}" method="POST">
-                                    @csrf @method('PATCH')
-                                    <div class="modal-body">
-                                        <p class="small text-muted mb-3">
-                                            Reset password untuk <strong>{{ $user->name }}</strong>
-                                        </p>
-                                        <div class="mb-2">
-                                            <label class="form-label small fw-semibold">Password Baru</label>
-                                            <input type="password" name="password"
-                                                   class="form-control form-control-sm"
-                                                   placeholder="Min. 8 karakter" required>
-                                        </div>
-                                        <div>
-                                            <label class="form-label small fw-semibold">Konfirmasi</label>
-                                            <input type="password" name="password_confirmation"
-                                                   class="form-control form-control-sm"
-                                                   placeholder="Ulangi password" required>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary btn-sm"
-                                                data-bs-dismiss="modal">Batal</button>
-                                        <button type="submit" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-save me-1"></i>Simpan
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-5">
+                        <td colspan="5" class="text-center text-muted py-5">
                             Belum ada user.
                         </td>
                     </tr>
@@ -148,4 +108,45 @@
         @endif
     </div>
 </div>
+
+{{-- Modal Reset Password (di luar tabel agar markup valid) --}}
+@foreach($users as $user)
+<div class="modal fade" id="modalReset{{ $user->id }}" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">Reset Password</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('users.reset-password', $user) }}" method="POST">
+                @csrf @method('PATCH')
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">
+                        Reset password untuk <strong>{{ $user->name }}</strong>
+                    </p>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">Password Baru</label>
+                        <input type="password" name="password"
+                               class="form-control form-control-sm"
+                               placeholder="Min. 8 karakter" required>
+                    </div>
+                    <div>
+                        <label class="form-label small fw-semibold">Konfirmasi</label>
+                        <input type="password" name="password_confirmation"
+                               class="form-control form-control-sm"
+                               placeholder="Ulangi password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                            data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-save me-1"></i>Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endforeach
 @endsection

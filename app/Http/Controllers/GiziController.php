@@ -1,11 +1,10 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Constants\AKG;
 use App\Models\MenuHarian;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class GiziController extends Controller
 {
@@ -30,12 +29,13 @@ class GiziController extends Controller
 
         $data = $menus->map(function ($m) {
             $g = $m->totalGizi();
+
             return ['tanggal' => $m->tanggal->format('d/m')] + $g;
         });
 
         return response()->json([
-            'data'  => $data,
-            'akg'   => AKG::MAKAN_SIANG,
+            'data' => $data,
+            'akg' => AKG::MAKAN_SIANG,
             'label' => AKG::LABEL,
         ]);
     }

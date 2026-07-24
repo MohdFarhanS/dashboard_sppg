@@ -95,7 +95,7 @@
     <tbody>
         @forelse($menus as $i => $menu)
         @php
-            $g       = $menu->totalGizi();
+            $g       = $menuCalc[$menu->id]['gizi'];
             $ks      = $menu->kelompok_sasaran ?? 'SD_4_6';
             $ksLabel = \App\Constants\AKG::KELOMPOK[$ks]['label'] ?? $ks;
             $akgRef  = array_merge(\App\Constants\AKG::MAKAN_SIANG, $menu->akgTarget('siang'));

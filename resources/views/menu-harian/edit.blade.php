@@ -208,10 +208,19 @@
 @push('scripts')
 <script>
 const existingBahans = @json($existingBahans);
+const menuJumlahPorsi = {{ (int) $menuHarian->jumlah_porsi }};
+const API_BAHAN_SEARCH_URL = @json(route('api.bahan-pangan.search'));
 
 // ===== JS sama persis dengan create.blade.php =====
 let bahanCounter = 0;
 let nutrisiState = {};
+
+// Escape data dari DB (nama_bahan/kode bisa berisi HTML) sebelum masuk innerHTML.
+function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+}
 
 document.getElementById('btn-tambah-bahan').addEventListener('click', () => tambahBahan());
 
@@ -262,13 +271,20 @@ function tambahBahan(prefillData = null) {
         row.querySelector('.jumlah-porsi').value = prefillData.jumlah_porsi;
         recalcRow(row, idx);
     } else {
+        // Bahan baru: default Jml Porsi ke jumlah_porsi menu ini, bukan hardcoded 1.
+        row.querySelector('.jumlah-porsi').value = menuJumlahPorsi;
         searchInput.focus();
     }
 }
 
 async function fetchBahan(q, acList, row, idx) {
     try {
-        const res = await fetch(`/api/bahan-pangan/search?q=${encodeURIComponent(q)}&limit=8`);
+        const res = await fetch(`${API_BAHAN_SEARCH_URL}?q=${encodeURIComponent(q)}&limit=8`);
+        if (!res.ok) {
+            acList.innerHTML = '<div class="autocomplete-item text-muted">Gagal memuat data.</div>';
+            acList.classList.remove('d-none');
+            return;
+        }
         const data = await res.json();
         acList.innerHTML = '';
         if (!data.length) {
@@ -277,8 +293,8 @@ async function fetchBahan(q, acList, row, idx) {
             data.forEach(b => {
                 const item = document.createElement('div');
                 item.className = 'autocomplete-item';
-                item.innerHTML = `<span class="kode">${b.kode}</span> — ${b.nama_bahan}
-                    <span class="text-muted ms-2" style="font-size:.7rem">${b.kategori}</span>`;
+                item.innerHTML = `<span class="kode">${escapeHtml(b.kode)}</span> — ${escapeHtml(b.nama_bahan)}
+                    <span class="text-muted ms-2" style="font-size:.7rem">${escapeHtml(b.kategori)}</span>`;
                 item.addEventListener('click', () => pilihBahan(b, row, idx, acList));
                 acList.appendChild(item);
             });

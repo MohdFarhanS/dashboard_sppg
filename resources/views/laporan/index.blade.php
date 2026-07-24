@@ -172,8 +172,8 @@
                     <tbody>
                         @forelse($menus as $i => $menu)
                         @php
-                            $b      = $menu->totalBiaya();
-                            $status = $menu->statusAnggaran();
+                            $b      = $menuCalc[$menu->id]['biaya'];
+                            $status = $menuCalc[$menu->id]['status'];
                             $ks     = $menu->kelompok_sasaran ?? 'SD_4_6';
                             $ksLabel = \App\Constants\AKG::KELOMPOK[$ks]['label'] ?? $ks;
                         @endphp
@@ -224,7 +224,7 @@
                             <td class="ps-3" colspan="6">Total</td>
                             <td class="text-end">Rp {{ number_format($totalBiaya, 0, ',', '.') }}</td>
                             <td class="text-end">Rp {{ number_format($rataCost, 0, ',', '.') }}</td>
-                            <td colspan="3"></td>
+                            <td colspan="2"></td>
                         </tr>
                     </tfoot>
                     @endif
@@ -250,7 +250,7 @@
                     <tbody>
                         @forelse($menus as $i => $menu)
                         @php
-                            $g      = $menu->totalGizi();
+                            $g      = $menuCalc[$menu->id]['gizi'];
                             $ks     = $menu->kelompok_sasaran ?? 'SD_4_6';
                             $ksLabel = \App\Constants\AKG::KELOMPOK[$ks]['label'] ?? $ks;
                             $akgRef = array_merge(\App\Constants\AKG::MAKAN_SIANG, $menu->akgTarget('siang'));
@@ -303,7 +303,7 @@
                             <td class="text-end" style="color:var(--primary)">
                                 {{ number_format($rataGizi['energi'], 1) }} kkal
                             </td>
-                            <td colspan="5"></td>
+                            <td colspan="4"></td>
                         </tr>
                     </tfoot>
                     @endif

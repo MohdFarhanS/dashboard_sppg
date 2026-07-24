@@ -1,27 +1,27 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\BahanPanganController;
-use App\Http\Controllers\MenuHarianController;
-use App\Http\Controllers\GiziController;
-use App\Http\Controllers\BiayaController;
 use App\Http\Controllers\AnggaranController;
-use App\Http\Controllers\SimulasiController;
-use App\Http\Controllers\LaporanController;
-use App\Http\Controllers\ImportTkpiController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\BahanPanganController;
+use App\Http\Controllers\BiayaController;
 use App\Http\Controllers\BudgetAlertController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GiziController;
+use App\Http\Controllers\ImportTkpiController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\MenuHarianController;
 use App\Http\Controllers\PesanMasukController;
+use App\Http\Controllers\SimulasiController;
+use App\Http\Controllers\UserController;
 
 // ── Halaman publik ────────────────────────────────────────────────────────────
 Route::get('/', [LandingController::class, 'index'])->name('landing');
-Route::post('/pesan', [LandingController::class, 'kirimPesan'])->name('landing.kirim-pesan');
+Route::post('/pesan', [LandingController::class, 'kirimPesan'])->name('landing.kirim-pesan')->middleware('throttle:5,1');
 
-Route::get('/login',  [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
-Route::post('/logout',[LoginController::class, 'logout'])->name('logout');
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->group(function () {
 
@@ -29,7 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:superadmin')->group(function () {
         Route::resource('users', UserController::class);
         Route::patch('users/{user}/reset-password', [UserController::class, 'resetPassword'])
-                ->name('users.reset-password');
+            ->name('users.reset-password');
     });
 
     // ── Semua role operasional (bukan superadmin) ─────────────────────────────
@@ -39,7 +39,7 @@ Route::middleware('auth')->group(function () {
 
         // API autocomplete bahan pangan (semua role operasional bisa)
         Route::get('/api/bahan-pangan/search', [BahanPanganController::class, 'apiSearch'])
-             ->name('api.bahan-pangan.search');
+            ->name('api.bahan-pangan.search');
 
         // ── Bahan Pangan ──────────────────────────────────────────────────────
         Route::prefix('bahan-pangan')->name('bahan-pangan.')->group(function () {
@@ -48,13 +48,13 @@ Route::middleware('auth')->group(function () {
 
             // Manajemen: ketua_sppg saja (controller juga memverifikasi)
             Route::middleware('role:ketua_sppg')->group(function () {
-                Route::get('/create',             [BahanPanganController::class, 'create'])->name('create');
-                Route::post('/',                  [BahanPanganController::class, 'store'])->name('store');
+                Route::get('/create', [BahanPanganController::class, 'create'])->name('create');
+                Route::post('/', [BahanPanganController::class, 'store'])->name('store');
                 Route::get('/{bahanPangan}/edit', [BahanPanganController::class, 'edit'])->name('edit');
-                Route::put('/{bahanPangan}',      [BahanPanganController::class, 'update'])->name('update');
-                Route::delete('/{bahanPangan}',   [BahanPanganController::class, 'destroy'])->name('destroy');
+                Route::put('/{bahanPangan}', [BahanPanganController::class, 'update'])->name('update');
+                Route::delete('/{bahanPangan}', [BahanPanganController::class, 'destroy'])->name('destroy');
                 Route::patch('/{bahanPangan}/status', [BahanPanganController::class, 'toggleStatus'])
-                     ->name('toggle-status');
+                    ->name('toggle-status');
             });
 
             // Wildcard show harus di bawah semua route spesifik
@@ -70,12 +70,12 @@ Route::middleware('auth')->group(function () {
 
             // Input & manajemen: ahli_gizi saja (rute spesifik SEBELUM wildcard)
             Route::middleware('role:ahli_gizi')->group(function () {
-                Route::get('/create',                 [MenuHarianController::class, 'create'])->name('create');
-                Route::post('/',                      [MenuHarianController::class, 'store'])->name('store');
-                Route::get('/{menuHarian}/edit',      [MenuHarianController::class, 'edit'])->name('edit');
-                Route::put('/{menuHarian}',           [MenuHarianController::class, 'update'])->name('update');
-                Route::delete('/{menuHarian}',        [MenuHarianController::class, 'destroy'])->name('destroy');
-                Route::patch('/{menuHarian}/finalize',   [MenuHarianController::class, 'finalize'])->name('finalize');
+                Route::get('/create', [MenuHarianController::class, 'create'])->name('create');
+                Route::post('/', [MenuHarianController::class, 'store'])->name('store');
+                Route::get('/{menuHarian}/edit', [MenuHarianController::class, 'edit'])->name('edit');
+                Route::put('/{menuHarian}', [MenuHarianController::class, 'update'])->name('update');
+                Route::delete('/{menuHarian}', [MenuHarianController::class, 'destroy'])->name('destroy');
+                Route::patch('/{menuHarian}/finalize', [MenuHarianController::class, 'finalize'])->name('finalize');
                 Route::post('/{menuHarian}/upload-foto', [MenuHarianController::class, 'uploadFoto'])->name('upload-foto');
             });
 
@@ -87,10 +87,10 @@ Route::middleware('auth')->group(function () {
 
         // ── Simulasi Menu: ahli_gizi saja ─────────────────────────────────────
         Route::middleware('role:ahli_gizi')->prefix('simulasi')->name('simulasi.')->group(function () {
-            Route::get('/',                  [SimulasiController::class, 'index'])->name('index');
+            Route::get('/', [SimulasiController::class, 'index'])->name('index');
             Route::get('/{menuHarian}/edit', [SimulasiController::class, 'editMenu'])->name('edit-simulasi');
-            Route::post('/kalkulasi',        [SimulasiController::class, 'kalkulasi'])->name('kalkulasi');
-            Route::post('/simpan',           [SimulasiController::class, 'simpan'])->name('simpan');
+            Route::post('/kalkulasi', [SimulasiController::class, 'kalkulasi'])->name('kalkulasi');
+            Route::post('/simpan', [SimulasiController::class, 'simpan'])->name('simpan');
         });
 
         // ── Monitoring Gizi: ketua_sppg + ahli_gizi ───────────────────────────
@@ -101,7 +101,7 @@ Route::middleware('auth')->group(function () {
 
         // ── Biaya Produksi: ketua_sppg + akuntan ──────────────────────────────
         Route::middleware('role:ketua_sppg,akuntan')->prefix('biaya')->name('biaya.')->group(function () {
-            Route::get('/dashboard',     [BiayaController::class, 'dashboard'])->name('dashboard');
+            Route::get('/dashboard', [BiayaController::class, 'dashboard'])->name('dashboard');
             Route::get('/detail/{menu}', [BiayaController::class, 'detailMenu'])->name('detail-menu');
             Route::post('/api/estimasi', [BiayaController::class, 'apiEstimasi'])->name('api.estimasi');
 
@@ -111,46 +111,47 @@ Route::middleware('auth')->group(function () {
 
                 // Tambah, simpan, dan hapus: akuntan saja
                 Route::middleware('role:akuntan')->group(function () {
-                    Route::get('/tambah',       [BiayaController::class, 'createHarga'])->name('create');
-                    Route::post('/',            [BiayaController::class, 'storeHarga'])->name('store');
-                    Route::delete('/{harga}',   [BiayaController::class, 'destroyHarga'])->name('destroy');
+                    Route::get('/tambah', [BiayaController::class, 'createHarga'])->name('create');
+                    Route::post('/', [BiayaController::class, 'storeHarga'])->name('store');
+                    Route::delete('/{harga}', [BiayaController::class, 'destroyHarga'])->name('destroy');
                 });
 
                 // Edit & update selalu redirect (tarif immutable)
                 Route::get('/{harga}/edit', [BiayaController::class, 'editHarga'])->name('edit');
-                Route::put('/{harga}',      [BiayaController::class, 'updateHarga'])->name('update');
+                Route::put('/{harga}', [BiayaController::class, 'updateHarga'])->name('update');
             });
         });
 
         // ── Pesan Masuk: ketua_sppg saja ─────────────────────────────────────
         Route::middleware('role:ketua_sppg')
-             ->get('/pesan-masuk', [PesanMasukController::class, 'index'])
-             ->name('pesan-masuk.index');
+            ->get('/pesan-masuk', [PesanMasukController::class, 'index'])
+            ->name('pesan-masuk.index');
 
         // ── Anggaran Porsi: ketua_sppg saja ──────────────────────────────────
         Route::middleware('role:ketua_sppg')->prefix('anggaran')->name('anggaran.')->group(function () {
-            Route::get('/',       [AnggaranController::class, 'index'])->name('index');
+            Route::get('/', [AnggaranController::class, 'index'])->name('index');
             Route::get('/tambah', [AnggaranController::class, 'create'])->name('create');
-            Route::post('/',      [AnggaranController::class, 'store'])->name('store');
+            Route::post('/', [AnggaranController::class, 'store'])->name('store');
         });
 
         // ── Laporan: semua role operasional ───────────────────────────────────
         Route::prefix('laporan')->name('laporan.')->group(function () {
-            Route::get('/',              [LaporanController::class, 'index'])->name('index');
+            Route::get('/', [LaporanController::class, 'index'])->name('index');
             Route::get('/export-excel', [LaporanController::class, 'exportExcel'])->name('export-excel');
-            Route::get('/export-pdf',   [LaporanController::class, 'exportPdf'])->name('export-pdf');
+            Route::get('/export-pdf', [LaporanController::class, 'exportPdf'])->name('export-pdf');
         });
 
         // ── Import TKPI: ketua_sppg saja ──────────────────────────────────────
         Route::middleware('role:ketua_sppg')->prefix('import-tkpi')->name('import-tkpi.')->group(function () {
-            Route::get('/',         [ImportTkpiController::class, 'index'])->name('index');
+            Route::get('/', [ImportTkpiController::class, 'index'])->name('index');
             Route::post('/preview', [ImportTkpiController::class, 'preview'])->name('preview');
-            Route::post('/import',  [ImportTkpiController::class, 'import'])->name('import');
+            Route::post('/import', [ImportTkpiController::class, 'import'])->name('import');
         });
 
         // ── Budget Alert: ketua_sppg + akuntan ────────────────────────────────
-        Route::middleware('role:ketua_sppg,akuntan')
-             ->get('/budget-alert', [BudgetAlertController::class, 'index'])
-             ->name('budget-alert.index');
+        Route::middleware('role:ketua_sppg,akuntan')->prefix('budget-alert')->name('budget-alert.')->group(function () {
+            Route::get('/', [BudgetAlertController::class, 'index'])->name('index');
+            Route::post('/dismiss', [BudgetAlertController::class, 'dismiss'])->name('dismiss');
+        });
     });
 });

@@ -11,7 +11,7 @@
                 <i class="fas fa-utensils me-2"></i>Menu Harian
             </h4>
         </div>
-        @if(auth()->user()->role === 'ahli_gizi')
+        @if(auth()->user()->isAhliGizi())
         <a href="{{ route('simulasi.index') }}" class="btn btn-primary"
            style="background:var(--primary);border-color:var(--primary)">
             <i class="fas fa-flask me-1"></i> Buat Menu Baru
@@ -93,7 +93,7 @@
                             <th>Estimasi Energi</th>
                             <th>Status</th>
                             <th>Anggaran</th>
-                            @if(auth()->user()->role === 'ahli_gizi')
+                            @if(auth()->user()->isAhliGizi())
                             <th class="text-center">Foto Menu</th>
                             @endif
                             <th class="text-end pe-4">Aksi</th>
@@ -101,7 +101,7 @@
                     </thead>
                     <tbody>
                         @forelse($menus as $menu)
-                        @php $gizi = $menu->totalGizi(); @endphp
+                        @php $gizi = $menuCalc[$menu->id]['gizi']; @endphp
                         <tr>
                             <td class="ps-4 fw-semibold">
                                 {{ $menu->tanggal->translatedFormat('d F Y') }}
@@ -148,7 +148,7 @@
                             </td>
                             <td>
                                 @if($menu->status === 'final')
-                                    @php $statusAnggaran = $menu->statusAnggaran(); @endphp
+                                    @php $statusAnggaran = $menuCalc[$menu->id]['status']; @endphp
                                     @if($statusAnggaran === 'over')
                                         <span class="badge bg-danger">
                                             <i class="fas fa-exclamation-triangle me-1"></i>Over
@@ -168,7 +168,7 @@
                                     <span class="text-muted small">—</span>
                                 @endif
                             </td>
-                            @if(auth()->user()->role === 'ahli_gizi')
+                            @if(auth()->user()->isAhliGizi())
                             <td class="text-center">
                                 @if($menu->status === 'final')
                                     @if($menu->foto_menu)
@@ -205,7 +205,7 @@
                                    class="btn btn-sm btn-outline-secondary me-1">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                @if(auth()->user()->role === 'ahli_gizi' && $menu->status !== 'final')
+                                @if(auth()->user()->isAhliGizi() && $menu->status !== 'final')
                                 <a href="{{ route('simulasi.edit-simulasi', $menu) }}"
                                    class="btn btn-sm btn-outline-primary me-1">
                                     <i class="fas fa-edit"></i>
@@ -223,10 +223,10 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role === 'ahli_gizi' ? 9 : 8 }}" class="text-center text-muted py-5">
+                            <td colspan="{{ auth()->user()->isAhliGizi() ? 9 : 8 }}" class="text-center text-muted py-5">
                                 <i class="fas fa-utensils fa-2x mb-2 d-block opacity-25"></i>
                                 Belum ada menu untuk bulan ini.
-                                @if(auth()->user()->role === 'ahli_gizi')
+                                @if(auth()->user()->isAhliGizi())
                                     <a href="{{ route('simulasi.index') }}">Buat menu via Simulasi</a>
                                 @endif
                             </td>
@@ -244,7 +244,7 @@
     </div>
 
     {{-- Modal Upload Foto (di luar tabel agar Bootstrap dapat render dengan benar) --}}
-    @if(auth()->user()->role === 'ahli_gizi')
+    @if(auth()->user()->isAhliGizi())
         @foreach($menus as $menu)
             @if($menu->status !== 'final')
             <div class="modal fade" id="modalFoto{{ $menu->id }}" tabindex="-1" aria-hidden="true">

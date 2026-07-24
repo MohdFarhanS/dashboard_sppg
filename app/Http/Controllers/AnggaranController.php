@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\AnggaranPorsi;
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AnggaranController extends Controller
 {
@@ -29,33 +32,42 @@ class AnggaranController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'anggaran_balita_sd3'       => 'required|numeric|min:1000',
+            'anggaran_balita_sd3' => 'required|numeric|min:1000',
             'anggaran_sd4_ibu_menyusui' => 'required|numeric|min:1000',
-            'berlaku_mulai'             => 'required|date',
-            'keterangan'                => 'nullable|string|max:200',
+            'berlaku_mulai' => 'required|date',
+            'keterangan' => 'nullable|string|max:200',
         ]);
 
-        $berlakuMulai = Carbon::parse($data['berlaku_mulai']);
-        $berlakuSampaiLama = $berlakuMulai->clone()->subDay()->toDateString();
+        $mulaiStr = Carbon::parse($data['berlaku_mulai'])->toDateString();
 
         $kelompokList = [
-            'balita_sd3'       => (float) $data['anggaran_balita_sd3'],
+            'balita_sd3' => (float) $data['anggaran_balita_sd3'],
             'sd4_ibu_menyusui' => (float) $data['anggaran_sd4_ibu_menyusui'],
         ];
 
-        foreach ($kelompokList as $kelompok => $anggaran) {
-            // Tutup record aktif sebelumnya untuk kelompok ini
-            AnggaranPorsi::where('kelompok', $kelompok)
-                ->whereNull('berlaku_sampai')
-                ->update(['berlaku_sampai' => $berlakuSampaiLama]);
-
-            AnggaranPorsi::create([
-                'kelompok'         => $kelompok,
-                'anggaran_per_porsi' => $anggaran,
-                'berlaku_mulai'    => $data['berlaku_mulai'],
-                'berlaku_sampai'   => null,
-                'keterangan'       => $data['keterangan'] ?? null,
-                'created_by'       => auth()->id(),
+        try {
+            // Kedua kelompok ditetapkan bersamaan: kalau salah satu gagal, jangan sampai
+            // kelompok lain terlanjur tersimpan (periode lama tertutup tanpa pengganti).
+            // Aturan penutupan/backdate ada di trait PeriodeBerlaku (dipakai bersama HargaBahan).
+            DB::transaction(function () use ($kelompokList, $data, $mulaiStr) {
+                foreach ($kelompokList as $kelompok => $anggaran) {
+                    AnggaranPorsi::tetapkanPeriode(
+                        ['kelompok' => $kelompok],
+                        $mulaiStr,
+                        [
+                            'anggaran_per_porsi' => $anggaran,
+                            'keterangan' => $data['keterangan'] ?? null,
+                            'created_by' => auth()->id(),
+                        ]
+                    );
+                }
+            });
+        } catch (UniqueConstraintViolationException) {
+            // Dua ketua submit tanggal yang sama secara bersamaan: pre-check di
+            // tetapkanPeriode() lolos, unique index DB yang menahannya. Jawab sebagai
+            // error validasi, bukan HTTP 500.
+            throw ValidationException::withMessages([
+                'berlaku_mulai' => 'Sudah ada anggaran yang berlaku mulai tanggal ini. Pilih tanggal lain.',
             ]);
         }
 

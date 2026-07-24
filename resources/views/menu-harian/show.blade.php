@@ -44,7 +44,7 @@
                 <span class="badge p-2" style="background:#fff3cd;color:#664d03;font-size:.85rem">
                     <i class="fas fa-pencil me-1"></i>Draft
                 </span>
-                @if(auth()->user()->role === 'ahli_gizi')
+                @if(auth()->user()->isAhliGizi())
                 <a href="{{ route('simulasi.edit-simulasi', $menuHarian) }}" class="btn btn-outline-primary btn-sm">
                     <i class="fas fa-edit me-1"></i>Edit
                 </a>
@@ -89,7 +89,7 @@
     @endif
 
     {{-- Notifikasi belum upload foto (untuk draft ahli_gizi) --}}
-    @if($menuHarian->status === 'draft' && auth()->user()->role === 'ahli_gizi' && !$menuHarian->foto_menu)
+    @if($menuHarian->status === 'draft' && auth()->user()->isAhliGizi() && !$menuHarian->foto_menu)
     <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
         <i class="fas fa-camera fs-5 flex-shrink-0"></i>
         <div>
@@ -366,14 +366,14 @@
     </div>
 
     {{-- Card Foto Menu --}}
-    @if($menuHarian->foto_menu || ($menuHarian->status === 'draft' && auth()->user()->role === 'ahli_gizi'))
+    @if($menuHarian->foto_menu || ($menuHarian->status === 'draft' && auth()->user()->isAhliGizi()))
     <div class="card border-0 shadow-sm mt-4">
         <div class="card-header border-0 d-flex justify-content-between align-items-center"
              style="background:#daeeff">
             <span class="fw-semibold" style="color:#0f4c81">
                 <i class="fas fa-image me-2"></i>Foto Menu
             </span>
-            @if($menuHarian->status === 'draft' && auth()->user()->role === 'ahli_gizi')
+            @if($menuHarian->status === 'draft' && auth()->user()->isAhliGizi())
             <button type="button" class="btn btn-sm btn-outline-primary"
                     data-bs-toggle="modal" data-bs-target="#modalUploadFoto">
                 <i class="fas fa-camera me-1"></i>{{ $menuHarian->foto_menu ? 'Ganti Foto' : 'Upload Foto' }}
@@ -397,7 +397,7 @@
     @endif
 
     {{-- Modal Upload Foto (hanya untuk draft + ahli_gizi) --}}
-    @if($menuHarian->status === 'draft' && auth()->user()->role === 'ahli_gizi')
+    @if($menuHarian->status === 'draft' && auth()->user()->isAhliGizi())
     <div class="modal fade" id="modalUploadFoto" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">

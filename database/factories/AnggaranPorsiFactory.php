@@ -13,12 +13,12 @@ class AnggaranPorsiFactory extends Factory
     public function definition(): array
     {
         return [
-            'kelompok'           => fake()->randomElement(['sd4_ibu_menyusui', 'balita_sd3']),
+            'kelompok' => fake()->randomElement(['sd4_ibu_menyusui', 'balita_sd3']),
             'anggaran_per_porsi' => 15000,
-            'berlaku_mulai'      => '2026-01-01',
-            'berlaku_sampai'     => null,
-            'keterangan'         => null,
-            'created_by'         => User::factory(),
+            'berlaku_mulai' => '2026-01-01',
+            'berlaku_sampai' => null,
+            'keterangan' => null,
+            'created_by' => User::factory(),
         ];
     }
 

@@ -13,7 +13,7 @@
             </h4>
             <small class="text-muted">Tabel Komposisi Pangan Indonesia — {{ number_format($stats['total']) }} bahan pangan</small>
         </div>
-        @if(auth()->user()->role === 'ketua_sppg')
+        @if(auth()->user()->isKetuaSppg())
         <div class="d-flex gap-2">
             <a href="{{ route('import-tkpi.index') }}" class="btn btn-outline-success btn-sm px-3">
                 <i class="fas fa-file-csv me-1"></i> Import CSV
@@ -137,7 +137,7 @@
                             </th>
                             <th class="text-center" style="width:60px">BDD%</th>
                             <th class="text-center" style="width:50px">Status</th>
-                            @if(auth()->user()->role !== 'ahli_gizi')
+                            @if(! auth()->user()->isAhliGizi())
                             <th class="text-center" style="width:110px">
                                 Harga/kg<br><small class="fw-normal text-muted">(Rp)</small>
                             </th>
@@ -201,7 +201,7 @@
                                     <span class="badge bg-secondary-subtle text-secondary">Nonaktif</span>
                                 @endif
                             </td>
-                            @if(auth()->user()->role !== 'ahli_gizi')
+                            @if(! auth()->user()->isAhliGizi())
                             <td class="text-center">
                                 @if(isset($hargaMap[$bahan->id]))
                                     <span class="small fw-semibold text-dark">
@@ -218,7 +218,7 @@
                                        class="btn btn-outline-primary btn-xs" title="Detail">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    @if(auth()->user()->role === 'ketua_sppg')
+                                    @if(auth()->user()->isKetuaSppg())
                                     <a href="{{ route('bahan-pangan.edit', $bahan) }}"
                                        class="btn btn-outline-warning btn-xs" title="Edit">
                                         <i class="fas fa-edit"></i>
@@ -234,7 +234,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="{{ auth()->user()->role !== 'ahli_gizi' ? 11 : 10 }}" class="text-center py-5 text-muted">
+                            <td colspan="{{ ! auth()->user()->isAhliGizi() ? 11 : 10 }}" class="text-center py-5 text-muted">
                                 <i class="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
                                 Tidak ada data yang cocok dengan pencarian.
                                 <br>

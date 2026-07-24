@@ -96,7 +96,7 @@
                         </div>
                     </div>
 
-                    @if(auth()->user()->role === 'ketua_sppg')
+                    @if(auth()->user()->isKetuaSppg())
                     <div class="mt-3 d-flex gap-2">
                         <a href="{{ route('bahan-pangan.edit', $bahanPangan) }}"
                            class="btn btn-warning btn-sm flex-fill">

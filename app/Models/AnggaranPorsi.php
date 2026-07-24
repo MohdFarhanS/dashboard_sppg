@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\PeriodeBerlaku;
 use Illuminate\Database\Eloquent\Model;
 
 class AnggaranPorsi extends Model
 {
+    use PeriodeBerlaku;
+
     const KELOMPOK_LABELS = [
-        'balita_sd3'       => 'Balita s/d Kelas 3 SD',
+        'balita_sd3' => 'Balita s/d Kelas 3 SD',
         'sd4_ibu_menyusui' => 'Kelas 4 SD s/d Ibu Menyusui',
     ];
 
@@ -19,7 +22,7 @@ class AnggaranPorsi extends Model
     ];
 
     protected $casts = [
-        'berlaku_mulai'  => 'date:Y-m-d',
+        'berlaku_mulai' => 'date:Y-m-d',
         'berlaku_sampai' => 'date:Y-m-d',
     ];
 
@@ -33,6 +36,11 @@ class AnggaranPorsi extends Model
         return self::KELOMPOK_LABELS[$this->kelompok] ?? '-';
     }
 
+    protected static function pesanPeriodeBentrok(): string
+    {
+        return 'Sudah ada anggaran yang berlaku mulai tanggal ini. Pilih tanggal lain.';
+    }
+
     public static function aktif(?string $tanggal = null, ?string $kelompok = null): float
     {
         $tgl = $tanggal ?? today()->toDateString();
@@ -40,7 +48,7 @@ class AnggaranPorsi extends Model
         $query = static::where('berlaku_mulai', '<=', $tgl)
             ->where(function ($q) use ($tgl) {
                 $q->whereNull('berlaku_sampai')
-                  ->orWhere('berlaku_sampai', '>=', $tgl);
+                    ->orWhere('berlaku_sampai', '>=', $tgl);
             });
 
         if ($kelompok !== null) {
@@ -50,6 +58,6 @@ class AnggaranPorsi extends Model
         $anggaran = $query->orderByDesc('berlaku_mulai')
             ->value('anggaran_per_porsi');
 
-        return (float) ($anggaran ?? 15000);
+        return (float) ($anggaran ?? 0);
     }
 }

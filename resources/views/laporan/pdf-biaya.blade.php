@@ -69,8 +69,8 @@
     <tbody>
         @forelse($menus as $i => $menu)
         @php
-            $b      = $menu->totalBiaya();
-            $status = $menu->statusAnggaran();
+            $b      = $menuCalc[$menu->id]['biaya'];
+            $status = $menuCalc[$menu->id]['status'];
             $lbl    = match($status) {
                 'over'    => 'Over',
                 'warning' => 'Mendekati',

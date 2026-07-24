@@ -382,6 +382,7 @@
 const AKG_SIANG    = @json(\App\Constants\AKG::MAKAN_SIANG);
 const AKG_LABEL    = @json(\App\Constants\AKG::LABEL);
 const AKG_KELOMPOK = @json(\App\Constants\AKG::KELOMPOK);
+const API_BAHAN_SEARCH_URL = @json(route('api.bahan-pangan.search'));
 let   akgTarget    = null;
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -389,6 +390,13 @@ let   akgTarget    = null;
 // ═══════════════════════════════════════════════════════════════════════════════
 let bahanCounter   = 0;
 let hasilKalkulasi = null;   // simpan hasil AJAX terakhir
+
+// Escape data dari DB (nama_bahan/kode bisa berisi HTML) sebelum masuk innerHTML.
+function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TAMBAH / HAPUS BAHAN
@@ -445,7 +453,12 @@ function tambahBahan(skipFocus = false) {
 
 async function fetchBahan(q, acList, row) {
     try {
-        const res  = await fetch(`/api/bahan-pangan/search?q=${encodeURIComponent(q)}&limit=8`);
+        const res = await fetch(`${API_BAHAN_SEARCH_URL}?q=${encodeURIComponent(q)}&limit=8`);
+        if (!res.ok) {
+            acList.innerHTML = '<div class="autocomplete-item text-muted">Gagal memuat data.</div>';
+            acList.classList.remove('d-none');
+            return;
+        }
         const data = await res.json();
         acList.innerHTML = '';
         if (!data.length) {
@@ -455,9 +468,9 @@ async function fetchBahan(q, acList, row) {
                 const item = document.createElement('div');
                 item.className = 'autocomplete-item';
                 item.innerHTML =
-                    `<span class="kode">${b.kode}</span>
-                     <span class="flex-grow-1">${b.nama_bahan}</span>
-                     <small class="text-muted">${b.kategori}</small>`;
+                    `<span class="kode">${escapeHtml(b.kode)}</span>
+                     <span class="flex-grow-1">${escapeHtml(b.nama_bahan)}</span>
+                     <small class="text-muted">${escapeHtml(b.kategori)}</small>`;
                 item.addEventListener('mousedown', e => {
                     e.preventDefault();
                     pilihBahan(b, row, acList);
@@ -656,8 +669,8 @@ function renderDetail(detail) {
         rowsHtml += `
         <tr>
             <td class="ps-3">
-                <div class="fw-semibold">${d.nama}</div>
-                <small class="text-muted">${d.kategori}</small>
+                <div class="fw-semibold">${escapeHtml(d.nama)}</div>
+                <small class="text-muted">${escapeHtml(d.kategori)}</small>
             </td>
             <td class="text-end">${d.gram}g</td>
             <td class="text-end">${d.porsi}x</td>

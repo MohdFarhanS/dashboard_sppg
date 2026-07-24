@@ -152,8 +152,10 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                @if($b['selisih'] < 0)
+                                @if($r['status'] === 'over')
                                     <span class="badge bg-danger">Over Budget</span>
+                                @elseif($r['status'] === 'belum_ada_data')
+                                    <span class="text-muted small">—</span>
                                 @else
                                     <span class="badge bg-primary">On Budget</span>
                                 @endif

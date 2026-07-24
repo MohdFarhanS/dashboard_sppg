@@ -40,11 +40,14 @@
         </div>
     </div>
 
-    @php $over = $biaya['selisih'] < 0; @endphp
-    <div class="alert {{ $over ? 'alert-danger' : 'alert-success' }} mb-4">
-        <i class="fa {{ $over ? 'fa-triangle-exclamation' : 'fa-circle-check' }} me-2"></i>
-        @if($biaya['anggaran'] == 0)
-            Anggaran belum diset untuk menu ini.
+    @php
+        $statusAnggaran = $menu->statusAnggaran();
+        $over = $biaya['selisih'] < 0;
+    @endphp
+    <div class="alert {{ $statusAnggaran === 'belum_ada_data' ? 'alert-secondary' : ($over ? 'alert-danger' : 'alert-success') }} mb-4">
+        <i class="fa {{ $statusAnggaran === 'belum_ada_data' ? 'fa-circle-info' : ($over ? 'fa-triangle-exclamation' : 'fa-circle-check') }} me-2"></i>
+        @if($statusAnggaran === 'belum_ada_data')
+            Anggaran atau biaya belum diatur untuk menu ini.
         @elseif($over)
             <strong>Over budget</strong> — melebihi anggaran sebesar
             <strong>Rp {{ number_format(abs($biaya['selisih']), 0, ',', '.') }}</strong>

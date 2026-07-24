@@ -16,71 +16,76 @@ class SmokeTest extends TestCase
     use RefreshDatabase;
 
     private User $ahliGizi;
+
     private User $akuntan;
+
     private User $ketuaSppg;
+
     private User $superadmin;
+
     private BahanPangan $bahan;
+
     private MenuHarian $menu;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->ahliGizi   = User::factory()->ahliGizi()->create();
-        $this->akuntan    = User::factory()->akuntan()->create();
-        $this->ketuaSppg  = User::factory()->ketuaSppg()->create();
+        $this->ahliGizi = User::factory()->ahliGizi()->create();
+        $this->akuntan = User::factory()->akuntan()->create();
+        $this->ketuaSppg = User::factory()->ketuaSppg()->create();
         $this->superadmin = User::factory()->superadmin()->create();
 
         $this->bahan = BahanPangan::create([
-            'kode'        => 'SMK-001',
-            'nama_bahan'  => 'Nasi Putih (Smoke)',
-            'kategori'    => 'Serealia',
-            'bdd'         => 100,
-            'energi'      => 180,
-            'protein'     => 4,
-            'lemak'       => 0,
+            'kode' => 'SMK-001',
+            'nama_bahan' => 'Nasi Putih (Smoke)',
+            'kategori' => 'Serealia',
+            'bdd' => 100,
+            'energi' => 180,
+            'protein' => 4,
+            'lemak' => 0,
             'karbohidrat' => 40,
-            'serat'       => 0,
-            'kalsium'     => 0,
-            'besi'        => 0,
-            'vit_c'       => 0,
-            'is_active'   => true,
+            'serat' => 0,
+            'kalsium' => 0,
+            'besi' => 0,
+            'vit_c' => 0,
+            'is_active' => true,
         ]);
 
         HargaBahan::create([
             'bahan_pangan_id' => $this->bahan->id,
-            'harga_per_100g'  => 2000,
-            'berlaku_mulai'   => '2026-01-01',
-            'berlaku_sampai'  => null,
+            'harga_per_100g' => 2000,
+            'berlaku_mulai' => '2026-01-01',
+            'berlaku_sampai' => null,
         ]);
 
         foreach (['sd4_ibu_menyusui', 'balita_sd3'] as $kelompok) {
             AnggaranPorsi::create([
-                'kelompok'           => $kelompok,
+                'kelompok' => $kelompok,
                 'anggaran_per_porsi' => 15000,
-                'berlaku_mulai'      => '2026-01-01',
-                'berlaku_sampai'     => null,
-                'created_by'         => $this->ahliGizi->id,
+                'berlaku_mulai' => '2026-01-01',
+                'berlaku_sampai' => null,
+                'created_by' => $this->ahliGizi->id,
             ]);
         }
 
-        $this->menu = MenuHarian::create([
-            'tanggal'            => '2026-05-15',
-            'user_id'            => $this->ahliGizi->id,
-            'nama_menu'          => 'Menu Smoke Test',
-            'status'             => 'draft',
-            'kelompok'           => 'sd4_ibu_menyusui',
-            'kelompok_sasaran'   => 'SD_4_6',
-            'jumlah_porsi'       => 10,
+        $this->menu = MenuHarian::forceCreate([
+            'tanggal' => '2026-05-15',
+            'user_id' => $this->ahliGizi->id,
+            'nama_menu' => 'Menu Smoke Test',
+            'status' => 'draft',
+            'kelompok' => 'sd4_ibu_menyusui',
+            'kelompok_sasaran' => 'SD_4_6',
+            'jumlah_porsi' => 10,
             'anggaran_per_porsi' => 15000,
-            'foto_menu'          => 'menu-foto/smoke.jpg',
+            'foto_menu' => 'menu-foto/smoke.jpg',
         ]);
 
         MenuDetailBahan::create([
-            'menu_harian_id'  => $this->menu->id,
+            'menu_harian_id' => $this->menu->id,
             'bahan_pangan_id' => $this->bahan->id,
-            'jumlah_gram'     => 200,
-            'jumlah_porsi'    => 10,
+            'jumlah_gram' => 200,
+            'jumlah_porsi' => 10,
         ]);
     }
 

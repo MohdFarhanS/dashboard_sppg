@@ -16,7 +16,7 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required|min:6',
         ]);
 
@@ -27,8 +27,9 @@ class LoginController extends Controller
 
             $user = Auth::user();
 
-            if (!$user->is_active) {
+            if (! $user->is_active) {
                 Auth::logout();
+
                 return back()->withErrors(['email' => 'Akun Anda dinonaktifkan.']);
             }
 
@@ -50,6 +51,7 @@ class LoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('landing');
     }
 }

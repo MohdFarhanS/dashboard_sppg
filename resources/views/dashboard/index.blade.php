@@ -21,10 +21,9 @@
 @section('content')
 
 @php
-    $role      = auth()->user()->role;
-    $isAhliGizi = $role === 'ahli_gizi';
-    $isAkuntan  = $role === 'akuntan';
-    $isKetua    = $role === 'ketua_sppg';
+    $isAhliGizi = auth()->user()->isAhliGizi();
+    $isAkuntan  = auth()->user()->isAkuntan();
+    $isKetua    = auth()->user()->isKetuaSppg();
     $bulanLabel = \Carbon\Carbon::createFromFormat('Y-m', $bulan)->translatedFormat('F Y');
 @endphp
 
@@ -273,14 +272,12 @@
                         <tbody>
                             @foreach($menus as $menu)
                             @php
-                                $g      = $menu->totalGizi();
-                                $b      = $menu->totalBiaya();
-                                $status = $menu->statusAnggaran();
-                                $akgMenu = array_merge(\App\Constants\AKG::MAKAN_SIANG, $menu->akgTarget('siang'));
-                                $pctAkg = $akgMenu['energi'] > 0
-                                    ? round($g['energi'] / $akgMenu['energi'] * 100)
-                                    : 0;
-                                $clsAkg = $pctAkg < 70 ? 'kurang' : ($pctAkg > 130 ? 'lebih' : 'cukup');
+                                $calc   = $menuCalc[$menu->id];
+                                $g      = $calc['gizi'];
+                                $b      = $calc['biaya'];
+                                $status = $calc['status'];
+                                $pctAkg = $calc['pctAkg'];
+                                $clsAkg = $calc['clsAkg'];
                             @endphp
                             <tr>
                                 <td style="padding:.65rem 1rem;border-color:#e8f1fc;color:#6b8ba4;white-space:nowrap;">
@@ -446,8 +443,6 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-
 @if(!$isAhliGizi && !empty($stats['distribusi_biaya']))
 <script>
 const distribusi = @json($stats['distribusi_biaya']);

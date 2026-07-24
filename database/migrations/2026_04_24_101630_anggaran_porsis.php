@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('anggaran_porsis')) {
+        if (! Schema::hasTable('anggaran_porsis')) {
             Schema::create('anggaran_porsis', function (Blueprint $table) {
                 $table->id();
                 $table->decimal('anggaran_per_porsi', 10, 2);

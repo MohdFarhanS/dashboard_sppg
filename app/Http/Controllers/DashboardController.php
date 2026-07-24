@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Constants\AKG;
-use App\Models\HargaBahan;
 use App\Models\MenuHarian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +12,8 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $bulan = $request->input('bulan', now()->format('Y-m'));
+        $request->validate(['bulan' => ['nullable', 'date_format:Y-m']]);
+        $bulan = $request->filled('bulan') ? $request->input('bulan') : now()->format('Y-m');
         [$tahun, $bln] = explode('-', $bulan);
 
         $keys = ['energi', 'protein', 'lemak', 'karbohidrat', 'serat', 'kalsium', 'besi', 'vit_c'];
@@ -27,6 +27,20 @@ class DashboardController extends Controller
         $menusFinal = $menus->filter(fn ($m) => $m->status === 'final');
         $jumlahHari = $menusFinal->count();
 
+        // Hitung gizi/biaya/status/AKG sekali per menu (semua status), keyed by id.
+        // Dipakai ulang untuk kartu ringkasan (final saja) & tabel view (semua) — hindari N+1.
+        $menuCalc = [];
+        foreach ($menus as $menu) {
+            $gizi = $menu->totalGizi();
+            $biaya = $menu->totalBiaya();
+            $status = MenuHarian::deriveStatusAnggaran($biaya);
+            $akgMenu = array_merge(AKG::MAKAN_SIANG, $menu->akgTarget('siang'));
+            $pctAkg = $akgMenu['energi'] > 0 ? round($gizi['energi'] / $akgMenu['energi'] * 100) : 0;
+            $clsAkg = $pctAkg < 70 ? 'kurang' : ($pctAkg > 130 ? 'lebih' : 'cukup');
+
+            $menuCalc[$menu->id] = compact('gizi', 'biaya', 'status', 'pctAkg', 'clsAkg');
+        }
+
         $totalGizi = array_fill_keys($keys, 0);
         $totalBiaya = 0;
         $budgetTotal = 0;
@@ -37,22 +51,22 @@ class DashboardController extends Controller
         $trendData = [];
 
         foreach ($menusFinal as $menu) {
-            $gizi = $menu->totalGizi();
-            $biaya = $menu->totalBiaya();
+            $gizi = $menuCalc[$menu->id]['gizi'];
+            $biaya = $menuCalc[$menu->id]['biaya'];
 
             foreach ($keys as $k) {
                 $totalGizi[$k] += $gizi[$k] ?? 0;
             }
 
             $totalBiaya += $biaya['total_seluruh'] ?? 0;
-            $budgetTotal += ($biaya['anggaran'] ?? 15000) * ($menu->jumlah_porsi ?? 1);
+            $budgetTotal += ($biaya['anggaran'] ?? 0) * ($menu->jumlah_porsi ?? 1);
 
             $trendData[] = [
                 'tanggal' => $menu->tanggal->format('d/m'),
                 'energi' => round($gizi['energi'] ?? 0, 1),
             ];
 
-            $status = $menu->statusAnggaran();
+            $status = $menuCalc[$menu->id]['status'];
             if ($status === 'over') {
                 $alertOver++;
                 $alertList[] = [
@@ -69,18 +83,14 @@ class DashboardController extends Controller
                 ];
             }
 
-            foreach ($menu->detailBahans as $detail) {
-                $bahan = $detail->bahanPangan;
-                if (! $bahan) {
+            // Reuse detail biaya yang sudah dihitung sekali di $menuCalc (totalBiaya() di
+            // atas) — hindari query hargaAktif() ulang per bahan (audit D3).
+            foreach ($biaya['detail'] as $d) {
+                if ($d['biaya'] <= 0) {
                     continue;
                 }
-                $kategori = $bahan->kategori ?? 'Lainnya';
-                $harga = HargaBahan::hargaAktif($bahan->id, $menu->tanggal->toDateString());
-                if (! $harga) {
-                    continue;
-                }
-                $biayaBahan = ($detail->jumlah_gram / 100) * $harga * ($detail->jumlah_porsi ?? 1);
-                $distribusiBiaya[$kategori] = ($distribusiBiaya[$kategori] ?? 0) + $biayaBahan;
+                $kategori = $d['kategori'] ?? 'Lainnya';
+                $distribusiBiaya[$kategori] = ($distribusiBiaya[$kategori] ?? 0) + $d['biaya'];
             }
         }
 
@@ -121,7 +131,7 @@ class DashboardController extends Controller
         ];
 
         return view('dashboard.index', compact(
-            'user', 'stats', 'menus', 'bulan',
+            'user', 'stats', 'menus', 'bulan', 'menuCalc',
             'rataGizi', 'persenAkg', 'trendData', 'jumlahHari'
         ));
     }

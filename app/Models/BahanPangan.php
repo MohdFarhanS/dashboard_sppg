@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class BahanPangan extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'kode', 'kode_lama', 'nama_bahan', 'kategori', 'sub_kategori', 'sumber',
         'bdd', 'air', 'energi', 'protein', 'lemak', 'karbohidrat', 'serat', 'abu',
@@ -24,7 +25,7 @@ class BahanPangan extends Model
     public function scopeCari($query, $keyword)
     {
         return $query->where('nama_bahan', 'like', "%{$keyword}%")
-                     ->orWhere('kode', 'like', "%{$keyword}%");
+            ->orWhere('kode', 'like', "%{$keyword}%");
     }
 
     // Scope per kategori

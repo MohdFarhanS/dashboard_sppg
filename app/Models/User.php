@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -13,9 +14,12 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     const ROLE_SUPERADMIN = 'superadmin';
+
     const ROLE_KETUA_SPPG = 'ketua_sppg';
-    const ROLE_AHLI_GIZI  = 'ahli_gizi';
-    const ROLE_AKUNTAN    = 'akuntan';
+
+    const ROLE_AHLI_GIZI = 'ahli_gizi';
+
+    const ROLE_AKUNTAN = 'akuntan';
 
     protected $fillable = [
         'name',
@@ -36,8 +40,20 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
+            'password' => 'hashed',
         ];
+    }
+
+    // ─── Relasi ────────────────────────────────────────────────────────────────
+
+    public function menuHarians(): HasMany
+    {
+        return $this->hasMany(MenuHarian::class);
+    }
+
+    public function importLogs(): HasMany
+    {
+        return $this->hasMany(ImportLog::class);
     }
 
     // ─── Role helpers ──────────────────────────────────────────────────────────
@@ -83,9 +99,9 @@ class User extends Authenticatable
         return match ($role) {
             self::ROLE_SUPERADMIN => 'Super Admin',
             self::ROLE_KETUA_SPPG => 'Ketua SPPG',
-            self::ROLE_AHLI_GIZI  => 'Ahli Gizi',
-            self::ROLE_AKUNTAN    => 'Akuntan',
-            default               => $role,
+            self::ROLE_AHLI_GIZI => 'Ahli Gizi',
+            self::ROLE_AKUNTAN => 'Akuntan',
+            default => $role,
         };
     }
 
@@ -94,8 +110,8 @@ class User extends Authenticatable
         return [
             self::ROLE_SUPERADMIN => 'Super Admin',
             self::ROLE_KETUA_SPPG => 'Ketua SPPG',
-            self::ROLE_AHLI_GIZI  => 'Ahli Gizi',
-            self::ROLE_AKUNTAN    => 'Akuntan',
+            self::ROLE_AHLI_GIZI => 'Ahli Gizi',
+            self::ROLE_AKUNTAN => 'Akuntan',
         ];
     }
 }

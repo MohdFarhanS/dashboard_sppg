@@ -21,10 +21,10 @@
         scrollbar-width:thin;
         scrollbar-color:rgba(255,255,255,.2) transparent;">
 
-        @php $role = Auth::user()->role; @endphp
+        @php $user = Auth::user(); @endphp
 
         {{-- ── Superadmin: hanya manajemen akun ─────────────────────── --}}
-        @if($role === 'superadmin')
+        @if($user->isSuperAdmin())
             <div class="nav-section">Administrasi</div>
             <a href="{{ route('users.index') }}"
                class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
@@ -32,7 +32,7 @@
             </a>
 
         {{-- ── Ketua SPPG ─────────────────────────────────────────────── --}}
-        @elseif($role === 'ketua_sppg')
+        @elseif($user->isKetuaSppg())
             <div class="nav-section">Menu Utama</div>
             <a href="{{ route('dashboard') }}"
                class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -90,7 +90,7 @@
             </a>
 
         {{-- ── Ahli Gizi ─────────────────────────────────────────────── --}}
-        @elseif($role === 'ahli_gizi')
+        @elseif($user->isAhliGizi())
             <div class="nav-section">Menu Utama</div>
             <a href="{{ route('dashboard') }}"
                class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -114,7 +114,7 @@
             </a>
 
         {{-- ── Akuntan ───────────────────────────────────────────────── --}}
-        @elseif($role === 'akuntan')
+        @elseif($user->isAkuntan())
             <div class="nav-section">Menu Utama</div>
             <a href="{{ route('dashboard') }}"
                class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">

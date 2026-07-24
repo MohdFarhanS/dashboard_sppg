@@ -30,7 +30,9 @@ class GiziDuaBelasKelompokTest extends TestCase
     use RefreshDatabase;
 
     private User $ahliGizi;
+
     private BahanPangan $nasi;
+
     private BahanPangan $ayam;
 
     protected function setUp(): void
@@ -38,63 +40,63 @@ class GiziDuaBelasKelompokTest extends TestCase
         parent::setUp();
 
         $this->ahliGizi = User::factory()->create([
-            'role'      => 'ahli_gizi',
+            'role' => 'ahli_gizi',
             'unit_sppg' => 'SPPG Test',
         ]);
 
         $this->nasi = BahanPangan::create([
-            'kode'        => 'TES-001',
-            'nama_bahan'  => 'Nasi Putih (Test)',
-            'kategori'    => 'Serealia',
-            'bdd'         => 100,
-            'energi'      => 180,
-            'protein'     => 4,
-            'lemak'       => 0,
+            'kode' => 'TES-001',
+            'nama_bahan' => 'Nasi Putih (Test)',
+            'kategori' => 'Serealia',
+            'bdd' => 100,
+            'energi' => 180,
+            'protein' => 4,
+            'lemak' => 0,
             'karbohidrat' => 40,
-            'serat'       => 0,
-            'kalsium'     => 0,
-            'besi'        => 0,
-            'vit_c'       => 0,
-            'is_active'   => true,
+            'serat' => 0,
+            'kalsium' => 0,
+            'besi' => 0,
+            'vit_c' => 0,
+            'is_active' => true,
         ]);
 
         $this->ayam = BahanPangan::create([
-            'kode'        => 'TES-002',
-            'nama_bahan'  => 'Daging Ayam (Test)',
-            'kategori'    => 'Daging',
-            'bdd'         => 100,
-            'energi'      => 200,
-            'protein'     => 20,
-            'lemak'       => 10,
+            'kode' => 'TES-002',
+            'nama_bahan' => 'Daging Ayam (Test)',
+            'kategori' => 'Daging',
+            'bdd' => 100,
+            'energi' => 200,
+            'protein' => 20,
+            'lemak' => 10,
             'karbohidrat' => 0,
-            'serat'       => 0,
-            'kalsium'     => 0,
-            'besi'        => 0,
-            'vit_c'       => 0,
-            'is_active'   => true,
+            'serat' => 0,
+            'kalsium' => 0,
+            'besi' => 0,
+            'vit_c' => 0,
+            'is_active' => true,
         ]);
 
         HargaBahan::create([
             'bahan_pangan_id' => $this->nasi->id,
-            'harga_per_100g'  => 2000,
-            'berlaku_mulai'   => '2026-01-01',
-            'berlaku_sampai'  => null,
+            'harga_per_100g' => 2000,
+            'berlaku_mulai' => '2026-01-01',
+            'berlaku_sampai' => null,
         ]);
 
         HargaBahan::create([
             'bahan_pangan_id' => $this->ayam->id,
-            'harga_per_100g'  => 4000,
-            'berlaku_mulai'   => '2026-01-01',
-            'berlaku_sampai'  => null,
+            'harga_per_100g' => 4000,
+            'berlaku_mulai' => '2026-01-01',
+            'berlaku_sampai' => null,
         ]);
 
         foreach (['sd4_ibu_menyusui', 'balita_sd3'] as $kelompok) {
             AnggaranPorsi::create([
-                'kelompok'           => $kelompok,
+                'kelompok' => $kelompok,
                 'anggaran_per_porsi' => 15000,
-                'berlaku_mulai'      => '2026-01-01',
-                'berlaku_sampai'     => null,
-                'created_by'         => $this->ahliGizi->id,
+                'berlaku_mulai' => '2026-01-01',
+                'berlaku_sampai' => null,
+                'created_by' => $this->ahliGizi->id,
             ]);
         }
     }
@@ -130,16 +132,16 @@ class GiziDuaBelasKelompokTest extends TestCase
     {
         // Nilai diverifikasi dengan PCT_SIANG = 0.325
         $kasus = [
-            'TK_PAUD'         => ['energi' => 455.0,  'protein' => 8.1,  'lemak' => 16.3, 'karbohidrat' => 71.5],
-            'SD_1_3'          => ['energi' => 536.3,  'protein' => 13.0, 'lemak' => 17.9, 'karbohidrat' => 81.3],
-            'SD_4_6'          => ['energi' => 633.8,  'protein' => 17.1, 'lemak' => 21.1, 'karbohidrat' => 94.3],
-            'SMP'             => ['energi' => 723.1,  'protein' => 21.9, 'lemak' => 24.4, 'karbohidrat' => 105.6],
-            'SMA'             => ['energi' => 771.9,  'protein' => 22.8, 'lemak' => 25.2, 'karbohidrat' => 113.8],
-            'BALITA_1_3'      => ['energi' => 438.8,  'protein' => 6.5,  'lemak' => 14.6, 'karbohidrat' => 69.9],
-            'BALITA_4_6'      => ['energi' => 455.0,  'protein' => 8.1,  'lemak' => 16.3, 'karbohidrat' => 71.5],
-            'HAMIL_T1'        => ['energi' => 757.3,  'protein' => 19.8, 'lemak' => 20.2, 'karbohidrat' => 118.6],
-            'HAMIL_T2'        => ['energi' => 796.3,  'protein' => 22.8, 'lemak' => 20.2, 'karbohidrat' => 123.5],
-            'HAMIL_T3'        => ['energi' => 796.3,  'protein' => 29.3, 'lemak' => 20.2, 'karbohidrat' => 123.5],
+            'TK_PAUD' => ['energi' => 455.0,  'protein' => 8.1,  'lemak' => 16.3, 'karbohidrat' => 71.5],
+            'SD_1_3' => ['energi' => 536.3,  'protein' => 13.0, 'lemak' => 17.9, 'karbohidrat' => 81.3],
+            'SD_4_6' => ['energi' => 633.8,  'protein' => 17.1, 'lemak' => 21.1, 'karbohidrat' => 94.3],
+            'SMP' => ['energi' => 723.1,  'protein' => 21.9, 'lemak' => 24.4, 'karbohidrat' => 105.6],
+            'SMA' => ['energi' => 771.9,  'protein' => 22.8, 'lemak' => 25.2, 'karbohidrat' => 113.8],
+            'BALITA_1_3' => ['energi' => 438.8,  'protein' => 6.5,  'lemak' => 14.6, 'karbohidrat' => 69.9],
+            'BALITA_4_6' => ['energi' => 455.0,  'protein' => 8.1,  'lemak' => 16.3, 'karbohidrat' => 71.5],
+            'HAMIL_T1' => ['energi' => 757.3,  'protein' => 19.8, 'lemak' => 20.2, 'karbohidrat' => 118.6],
+            'HAMIL_T2' => ['energi' => 796.3,  'protein' => 22.8, 'lemak' => 20.2, 'karbohidrat' => 123.5],
+            'HAMIL_T3' => ['energi' => 796.3,  'protein' => 29.3, 'lemak' => 20.2, 'karbohidrat' => 123.5],
             'MENYUSUI_6BLN_1' => ['energi' => 838.5,  'protein' => 26.0, 'lemak' => 21.8, 'karbohidrat' => 131.6],
             'MENYUSUI_6BLN_2' => ['energi' => 861.3,  'protein' => 24.4, 'lemak' => 21.8, 'karbohidrat' => 134.9],
         ];
@@ -147,9 +149,9 @@ class GiziDuaBelasKelompokTest extends TestCase
         foreach ($kasus as $kunci => $expected) {
             $target = AKG::targetSajian($kunci, 'siang');
 
-            $this->assertEqualsWithDelta($expected['energi'],      $target['energi'],      0.05, "energi {$kunci}");
-            $this->assertEqualsWithDelta($expected['protein'],     $target['protein'],     0.05, "protein {$kunci}");
-            $this->assertEqualsWithDelta($expected['lemak'],       $target['lemak'],       0.05, "lemak {$kunci}");
+            $this->assertEqualsWithDelta($expected['energi'], $target['energi'], 0.05, "energi {$kunci}");
+            $this->assertEqualsWithDelta($expected['protein'], $target['protein'], 0.05, "protein {$kunci}");
+            $this->assertEqualsWithDelta($expected['lemak'], $target['lemak'], 0.05, "lemak {$kunci}");
             $this->assertEqualsWithDelta($expected['karbohidrat'], $target['karbohidrat'], 0.05, "karbohidrat {$kunci}");
         }
     }
@@ -159,9 +161,9 @@ class GiziDuaBelasKelompokTest extends TestCase
         $opts = AKG::cascadeOptions();
 
         $this->assertArrayHasKey('Peserta Didik', $opts);
-        $this->assertArrayHasKey('Ibu Hamil',     $opts);
-        $this->assertArrayHasKey('Ibu Menyusui',  $opts);
-        $this->assertArrayHasKey('Anak Balita',   $opts);
+        $this->assertArrayHasKey('Ibu Hamil', $opts);
+        $this->assertArrayHasKey('Ibu Menyusui', $opts);
+        $this->assertArrayHasKey('Anak Balita', $opts);
 
         $this->assertCount(5, $opts['Peserta Didik']); // TK_PAUD, SD_1_3, SD_4_6, SMP, SMA
         $this->assertCount(3, $opts['Ibu Hamil']);     // T1, T2, T3
@@ -176,7 +178,7 @@ class GiziDuaBelasKelompokTest extends TestCase
     public function test_akg_to_anggaran_kelompok_memetakan_12_kelompok_ke_2_grup(): void
     {
         $balitaSd3 = ['TK_PAUD', 'SD_1_3', 'BALITA_1_3', 'BALITA_4_6'];
-        $sd4Ibu    = ['SD_4_6', 'SMP', 'SMA', 'HAMIL_T1', 'HAMIL_T2', 'HAMIL_T3', 'MENYUSUI_6BLN_1', 'MENYUSUI_6BLN_2'];
+        $sd4Ibu = ['SD_4_6', 'SMP', 'SMA', 'HAMIL_T1', 'HAMIL_T2', 'HAMIL_T3', 'MENYUSUI_6BLN_1', 'MENYUSUI_6BLN_2'];
 
         foreach ($balitaSd3 as $ks) {
             $this->assertEquals('balita_sd3', AKG::toAnggaranKelompok($ks),
@@ -204,14 +206,14 @@ class GiziDuaBelasKelompokTest extends TestCase
 
         foreach (array_keys(AKG::KELOMPOK) as $ks) {
             $kelompok = AKG::toAnggaranKelompok($ks);
-            MenuHarian::create([
-                'tanggal'            => $tanggal,
-                'user_id'            => $this->ahliGizi->id,
-                'nama_menu'          => "Menu {$ks}",
-                'status'             => 'draft',
-                'kelompok'           => $kelompok,
-                'kelompok_sasaran'   => $ks,
-                'jumlah_porsi'       => 10,
+            MenuHarian::forceCreate([
+                'tanggal' => $tanggal,
+                'user_id' => $this->ahliGizi->id,
+                'nama_menu' => "Menu {$ks}",
+                'status' => 'draft',
+                'kelompok' => $kelompok,
+                'kelompok_sasaran' => $ks,
+                'jumlah_porsi' => 10,
                 'anggaran_per_porsi' => 15000,
             ]);
         }
@@ -234,13 +236,13 @@ class GiziDuaBelasKelompokTest extends TestCase
 
         // SMA → energi target = 771.9
         $menuSma = $this->buatMenuNasi('2026-05-01', 'SMA');
-        $target  = $menuSma->akgTarget('siang');
+        $target = $menuSma->akgTarget('siang');
 
         $this->assertEqualsWithDelta(771.9, $target['energi'], 0.05, 'SMA target energi harus 771.9');
 
         // SD_4_6 → energi target = 633.8
         $menuSd46 = $this->buatMenuNasi('2026-05-01', 'SD_4_6');
-        $target   = $menuSd46->akgTarget('siang');
+        $target = $menuSd46->akgTarget('siang');
 
         $this->assertEqualsWithDelta(633.8, $target['energi'], 0.05, 'SD_4_6 target energi harus 633.8');
     }
@@ -278,9 +280,9 @@ class GiziDuaBelasKelompokTest extends TestCase
         // BALITA_1_3 (target 438.8): 82.0% → cukup (≥ 80)
         // SMA (target 771.9): 46.6% → kurang (< 80)
 
-        $menuTkPaud   = $this->buatMenuNasi('2026-05-01', 'TK_PAUD');
-        $menuBalita   = $this->buatMenuNasi('2026-05-01', 'BALITA_1_3');
-        $menuSma      = $this->buatMenuNasi('2026-05-01', 'SMA');
+        $menuTkPaud = $this->buatMenuNasi('2026-05-01', 'TK_PAUD');
+        $menuBalita = $this->buatMenuNasi('2026-05-01', 'BALITA_1_3');
+        $menuSma = $this->buatMenuNasi('2026-05-01', 'SMA');
 
         $menuTkPaud->load('detailBahans.bahanPangan');
         $menuBalita->load('detailBahans.bahanPangan');
@@ -288,7 +290,7 @@ class GiziDuaBelasKelompokTest extends TestCase
 
         $evalTkPaud = $menuTkPaud->evaluasiGizi('siang');
         $evalBalita = $menuBalita->evaluasiGizi('siang');
-        $evalSma    = $menuSma->evaluasiGizi('siang');
+        $evalSma = $menuSma->evaluasiGizi('siang');
 
         // Semua menu sama tapi evaluasi berbeda karena target berbeda
         $this->assertEquals('kurang', $evalTkPaud['energi']['status'],
@@ -320,7 +322,7 @@ class GiziDuaBelasKelompokTest extends TestCase
         $hasilGizi = [];
 
         foreach ($kelompokBerbeda as $i => $ks) {
-            $menu = $this->buatMenuNasi('2026-05-0' . ($i + 1), $ks);
+            $menu = $this->buatMenuNasi('2026-05-0'.($i + 1), $ks);
             $menu->load('detailBahans.bahanPangan');
             $hasilGizi[$ks] = $menu->totalGizi();
         }
@@ -336,9 +338,9 @@ class GiziDuaBelasKelompokTest extends TestCase
 
         // Gizi per porsi: 360.0 kkal, 8.0g protein, 0.0g lemak, 80.0g karbo
         $this->assertEquals(360.0, $referensi['energi']);
-        $this->assertEquals(8.0,   $referensi['protein']);
-        $this->assertEquals(0.0,   $referensi['lemak']);
-        $this->assertEquals(80.0,  $referensi['karbohidrat']);
+        $this->assertEquals(8.0, $referensi['protein']);
+        $this->assertEquals(0.0, $referensi['lemak']);
+        $this->assertEquals(80.0, $referensi['karbohidrat']);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -350,8 +352,8 @@ class GiziDuaBelasKelompokTest extends TestCase
         $day = 1;
 
         foreach (array_keys(AKG::KELOMPOK) as $ks) {
-            $tanggal = '2026-05-' . str_pad($day++, 2, '0', STR_PAD_LEFT);
-            $menu    = $this->buatMenuNasi($tanggal, $ks);
+            $tanggal = '2026-05-'.str_pad($day++, 2, '0', STR_PAD_LEFT);
+            $menu = $this->buatMenuNasi($tanggal, $ks);
 
             $this->actingAs($this->ahliGizi)
                 ->patch(route('menu-harian.finalize', $menu))
@@ -375,8 +377,8 @@ class GiziDuaBelasKelompokTest extends TestCase
         $day = 1;
 
         foreach (array_keys(AKG::KELOMPOK) as $ks) {
-            $tanggal = '2026-05-' . str_pad($day++, 2, '0', STR_PAD_LEFT);
-            $menu    = $this->buatMenuNasi($tanggal, $ks);
+            $tanggal = '2026-05-'.str_pad($day++, 2, '0', STR_PAD_LEFT);
+            $menu = $this->buatMenuNasi($tanggal, $ks);
 
             $this->actingAs($this->ahliGizi)
                 ->patch(route('menu-harian.finalize', $menu));
@@ -401,7 +403,7 @@ class GiziDuaBelasKelompokTest extends TestCase
         AnggaranPorsi::where('kelompok', 'balita_sd3')->update(['anggaran_per_porsi' => 12000]);
 
         $menuTkPaud = $this->buatMenuNasi('2026-05-01', 'TK_PAUD');
-        $menuSd46   = $this->buatMenuNasi('2026-05-01', 'SD_4_6');
+        $menuSd46 = $this->buatMenuNasi('2026-05-01', 'SD_4_6');
 
         $this->actingAs($this->ahliGizi)
             ->patch(route('menu-harian.finalize', $menuTkPaud));
@@ -447,7 +449,7 @@ class GiziDuaBelasKelompokTest extends TestCase
         //   TK_PAUD akan menampilkan 56.8% (Kurang) — bukan 79.1% (Cukup)
 
         $menuTkPaud = $this->buatMenuNasi('2026-05-01', 'TK_PAUD');
-        $menuSd46   = $this->buatMenuNasi('2026-05-01', 'SD_4_6');
+        $menuSd46 = $this->buatMenuNasi('2026-05-01', 'SD_4_6');
 
         // TK_PAUD: pct = 79.1 → Cukup, target ditampilkan sebagai "455"
         $this->actingAs($this->ahliGizi)
@@ -474,7 +476,7 @@ class GiziDuaBelasKelompokTest extends TestCase
         //   SMA (target=771.9): pct=46.6 → "46.6%" muncul di show SMA
 
         $menuTkPaud = $this->buatMenuNasi('2026-05-01', 'TK_PAUD');
-        $menuSma    = $this->buatMenuNasi('2026-05-01', 'SMA');
+        $menuSma = $this->buatMenuNasi('2026-05-01', 'SMA');
 
         $this->actingAs($this->ahliGizi)
             ->get(route('menu-harian.show', $menuTkPaud))
@@ -492,8 +494,8 @@ class GiziDuaBelasKelompokTest extends TestCase
         $day = 1;
 
         foreach (array_keys(AKG::KELOMPOK) as $ks) {
-            $tanggal = '2026-05-' . str_pad($day++, 2, '0', STR_PAD_LEFT);
-            $menu    = $this->buatMenuNasi($tanggal, $ks);
+            $tanggal = '2026-05-'.str_pad($day++, 2, '0', STR_PAD_LEFT);
+            $menu = $this->buatMenuNasi($tanggal, $ks);
 
             // Finalisasi
             $this->actingAs($this->ahliGizi)
@@ -513,15 +515,15 @@ class GiziDuaBelasKelompokTest extends TestCase
 
     public function test_menu_index_filter_kelompok_sasaran_menampilkan_hanya_menu_yang_sesuai(): void
     {
-        $menuSd46  = $this->buatMenuNasiNamed('2026-05-01', 'SD_4_6',   'Menu SD46 Test');
-        $menuSma   = $this->buatMenuNasiNamed('2026-05-01', 'SMA',      'Menu SMA Test');
+        $menuSd46 = $this->buatMenuNasiNamed('2026-05-01', 'SD_4_6', 'Menu SD46 Test');
+        $menuSma = $this->buatMenuNasiNamed('2026-05-01', 'SMA', 'Menu SMA Test');
         $menuBalita = $this->buatMenuNasiNamed('2026-05-01', 'BALITA_1_3', 'Menu Balita Test');
 
         // Filter SD_4_6 → hanya menu SD_4_6 tampil
         $response = $this->actingAs($this->ahliGizi)
             ->get(route('menu-harian.index', [
                 'kelompok_sasaran' => 'SD_4_6',
-                'bulan'            => '2026-05',
+                'bulan' => '2026-05',
             ]))
             ->assertOk();
 
@@ -533,7 +535,7 @@ class GiziDuaBelasKelompokTest extends TestCase
         $response = $this->actingAs($this->ahliGizi)
             ->get(route('menu-harian.index', [
                 'kelompok_sasaran' => 'SMA',
-                'bulan'            => '2026-05',
+                'bulan' => '2026-05',
             ]))
             ->assertOk();
 
@@ -544,9 +546,9 @@ class GiziDuaBelasKelompokTest extends TestCase
 
     public function test_menu_index_menampilkan_semua_kelompok_tanpa_filter(): void
     {
-        $this->buatMenuNasiNamed('2026-05-01', 'TK_PAUD',    'Menu TK PAUD');
-        $this->buatMenuNasiNamed('2026-05-01', 'SD_4_6',     'Menu SD 46');
-        $this->buatMenuNasiNamed('2026-05-01', 'HAMIL_T1',   'Menu Hamil T1');
+        $this->buatMenuNasiNamed('2026-05-01', 'TK_PAUD', 'Menu TK PAUD');
+        $this->buatMenuNasiNamed('2026-05-01', 'SD_4_6', 'Menu SD 46');
+        $this->buatMenuNasiNamed('2026-05-01', 'HAMIL_T1', 'Menu Hamil T1');
         $this->buatMenuNasiNamed('2026-05-01', 'BALITA_1_3', 'Menu Balita 13');
 
         $response = $this->actingAs($this->ahliGizi)
@@ -569,26 +571,26 @@ class GiziDuaBelasKelompokTest extends TestCase
         $day = 1;
 
         foreach ($kelompokList as $ks) {
-            $tanggal  = '2026-05-' . str_pad($day++, 2, '0', STR_PAD_LEFT);
+            $tanggal = '2026-05-'.str_pad($day++, 2, '0', STR_PAD_LEFT);
             $kelompok = AKG::toAnggaranKelompok($ks);
 
-            $menu = MenuHarian::create([
-                'tanggal'            => $tanggal,
-                'user_id'            => $this->ahliGizi->id,
-                'nama_menu'          => "Laporan Menu {$ks}",
-                'status'             => 'final',
-                'kelompok'           => $kelompok,
-                'kelompok_sasaran'   => $ks,
-                'jumlah_porsi'       => 10,
+            $menu = MenuHarian::forceCreate([
+                'tanggal' => $tanggal,
+                'user_id' => $this->ahliGizi->id,
+                'nama_menu' => "Laporan Menu {$ks}",
+                'status' => 'final',
+                'kelompok' => $kelompok,
+                'kelompok_sasaran' => $ks,
+                'jumlah_porsi' => 10,
                 'anggaran_per_porsi' => 15000,
             ]);
 
             MenuDetailBahan::create([
-                'menu_harian_id'  => $menu->id,
+                'menu_harian_id' => $menu->id,
                 'bahan_pangan_id' => $this->nasi->id,
-                'jumlah_gram'     => 200,
-                'jumlah_porsi'    => 10,
-                'harga_per_100g'  => 2000,
+                'jumlah_gram' => 200,
+                'jumlah_porsi' => 10,
+                'harga_per_100g' => 2000,
             ]);
         }
 
@@ -610,26 +612,26 @@ class GiziDuaBelasKelompokTest extends TestCase
         $day = 1;
 
         foreach ($kelompokList as $ks) {
-            $tanggal  = '2026-05-' . str_pad($day++, 2, '0', STR_PAD_LEFT);
+            $tanggal = '2026-05-'.str_pad($day++, 2, '0', STR_PAD_LEFT);
             $kelompok = AKG::toAnggaranKelompok($ks);
 
-            $menu = MenuHarian::create([
-                'tanggal'            => $tanggal,
-                'user_id'            => $this->ahliGizi->id,
-                'nama_menu'          => "Biaya Menu {$ks}",
-                'status'             => 'final',
-                'kelompok'           => $kelompok,
-                'kelompok_sasaran'   => $ks,
-                'jumlah_porsi'       => 10,
+            $menu = MenuHarian::forceCreate([
+                'tanggal' => $tanggal,
+                'user_id' => $this->ahliGizi->id,
+                'nama_menu' => "Biaya Menu {$ks}",
+                'status' => 'final',
+                'kelompok' => $kelompok,
+                'kelompok_sasaran' => $ks,
+                'jumlah_porsi' => 10,
                 'anggaran_per_porsi' => 15000,
             ]);
 
             MenuDetailBahan::create([
-                'menu_harian_id'  => $menu->id,
+                'menu_harian_id' => $menu->id,
                 'bahan_pangan_id' => $this->nasi->id,
-                'jumlah_gram'     => 200,
-                'jumlah_porsi'    => 10,
-                'harga_per_100g'  => 2000,
+                'jumlah_gram' => 200,
+                'jumlah_porsi' => 10,
+                'harga_per_100g' => 2000,
             ]);
         }
 
@@ -650,10 +652,10 @@ class GiziDuaBelasKelompokTest extends TestCase
 
         $result = $this->actingAs($this->ahliGizi)
             ->postJson(route('simulasi.kalkulasi'), [
-                'bahans'       => [['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 1]],
+                'bahans' => [['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 1]],
                 'jumlah_porsi' => 1,
-                'tanggal'      => '2026-05-08',
-                'kelompok'     => 'BALITA_1_3',
+                'tanggal' => '2026-05-08',
+                'kelompok' => 'BALITA_1_3',
             ])
             ->assertOk()
             ->json();
@@ -676,10 +678,10 @@ class GiziDuaBelasKelompokTest extends TestCase
         foreach (['BALITA_1_3', 'TK_PAUD', 'SD_4_6', 'SMA'] as $ks) {
             $result = $this->actingAs($this->ahliGizi)
                 ->postJson(route('simulasi.kalkulasi'), [
-                    'bahans'       => [['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 1]],
+                    'bahans' => [['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 1]],
                     'jumlah_porsi' => 1,
-                    'tanggal'      => '2026-05-08',
-                    'kelompok'     => $ks,
+                    'tanggal' => '2026-05-08',
+                    'kelompok' => $ks,
                 ])
                 ->assertOk()
                 ->json('persen_akg.energi');
@@ -688,9 +690,9 @@ class GiziDuaBelasKelompokTest extends TestCase
         }
 
         // BALITA_1_3 (target terkecil) → pct terbesar
-        $this->assertGreaterThan($pctPerKelompok['TK_PAUD'],  $pctPerKelompok['BALITA_1_3']);
-        $this->assertGreaterThan($pctPerKelompok['SD_4_6'],   $pctPerKelompok['TK_PAUD']);
-        $this->assertGreaterThan($pctPerKelompok['SMA'],      $pctPerKelompok['SD_4_6']);
+        $this->assertGreaterThan($pctPerKelompok['TK_PAUD'], $pctPerKelompok['BALITA_1_3']);
+        $this->assertGreaterThan($pctPerKelompok['SD_4_6'], $pctPerKelompok['TK_PAUD']);
+        $this->assertGreaterThan($pctPerKelompok['SMA'], $pctPerKelompok['SD_4_6']);
     }
 
     public function test_kalkulasi_simulasi_anggaran_sesuai_kelompok_anggaran_bukan_kelompok_sasaran(): void
@@ -703,20 +705,20 @@ class GiziDuaBelasKelompokTest extends TestCase
 
         $biayaTkPaud = $this->actingAs($this->ahliGizi)
             ->postJson(route('simulasi.kalkulasi'), [
-                'bahans'       => [['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 1]],
+                'bahans' => [['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 1]],
                 'jumlah_porsi' => 1,
-                'tanggal'      => '2026-05-08',
-                'kelompok'     => 'TK_PAUD',
+                'tanggal' => '2026-05-08',
+                'kelompok' => 'TK_PAUD',
             ])
             ->assertOk()
             ->json('biaya');
 
         $biayaSd46 = $this->actingAs($this->ahliGizi)
             ->postJson(route('simulasi.kalkulasi'), [
-                'bahans'       => [['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 1]],
+                'bahans' => [['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 1]],
                 'jumlah_porsi' => 1,
-                'tanggal'      => '2026-05-08',
-                'kelompok'     => 'SD_4_6',
+                'tanggal' => '2026-05-08',
+                'kelompok' => 'SD_4_6',
             ])
             ->assertOk()
             ->json('biaya');
@@ -738,14 +740,14 @@ class GiziDuaBelasKelompokTest extends TestCase
         // Menggunakan model langsung karena lebih dapat diandalkan di SQLite in-memory.
         $kelompok = AKG::toAnggaranKelompok('HAMIL_T2');
 
-        $menu = MenuHarian::create([
-            'tanggal'            => '2026-05-10',
-            'user_id'            => $this->ahliGizi->id,
-            'nama_menu'          => 'Menu Ibu Hamil T2',
-            'status'             => 'draft',
-            'kelompok'           => $kelompok,
-            'kelompok_sasaran'   => 'HAMIL_T2',
-            'jumlah_porsi'       => 5,
+        $menu = MenuHarian::forceCreate([
+            'tanggal' => '2026-05-10',
+            'user_id' => $this->ahliGizi->id,
+            'nama_menu' => 'Menu Ibu Hamil T2',
+            'status' => 'draft',
+            'kelompok' => $kelompok,
+            'kelompok_sasaran' => 'HAMIL_T2',
+            'jumlah_porsi' => 5,
             'anggaran_per_porsi' => 15000,
         ]);
 
@@ -765,12 +767,12 @@ class GiziDuaBelasKelompokTest extends TestCase
         // Verifikasi HTTP route juga mereturn 200 (behavior route)
         $this->actingAs($this->ahliGizi)
             ->postJson(route('simulasi.simpan'), [
-                'tanggal'          => '2026-06-01',  // tanggal berbeda untuk menghindari unique constraint
-                'nama_menu'        => 'Menu HAMIL_T2 via HTTP',
-                'catatan'          => 'SD Negeri 01',
-                'jumlah_porsi'     => 5,
+                'tanggal' => '2026-06-01',  // tanggal berbeda untuk menghindari unique constraint
+                'nama_menu' => 'Menu HAMIL_T2 via HTTP',
+                'catatan' => 'SD Negeri 01',
+                'jumlah_porsi' => 5,
                 'kelompok_sasaran' => 'HAMIL_T2',
-                'bahans'           => [
+                'bahans' => [
                     ['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 5],
                 ],
             ])
@@ -786,12 +788,12 @@ class GiziDuaBelasKelompokTest extends TestCase
         // Coba buat lagi untuk tanggal dan kelompok yang sama → harus error 422
         $this->actingAs($this->ahliGizi)
             ->postJson(route('simulasi.simpan'), [
-                'tanggal'          => '2026-05-10',
-                'nama_menu'        => 'Menu Duplikat',
-                'catatan'          => 'SD Negeri 01',
-                'jumlah_porsi'     => 5,
+                'tanggal' => '2026-05-10',
+                'nama_menu' => 'Menu Duplikat',
+                'catatan' => 'SD Negeri 01',
+                'jumlah_porsi' => 5,
                 'kelompok_sasaran' => 'SD_4_6',
-                'bahans'           => [
+                'bahans' => [
                     ['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 5],
                 ],
             ])
@@ -800,12 +802,12 @@ class GiziDuaBelasKelompokTest extends TestCase
         // Tetapi kelompok berbeda (HAMIL_T1) di tanggal yang sama → harus berhasil
         $this->actingAs($this->ahliGizi)
             ->postJson(route('simulasi.simpan'), [
-                'tanggal'          => '2026-05-10',
-                'nama_menu'        => 'Menu Ibu Hamil T1',
-                'catatan'          => 'SD Negeri 01',
-                'jumlah_porsi'     => 5,
+                'tanggal' => '2026-05-10',
+                'nama_menu' => 'Menu Ibu Hamil T1',
+                'catatan' => 'SD Negeri 01',
+                'jumlah_porsi' => 5,
                 'kelompok_sasaran' => 'HAMIL_T1',
-                'bahans'           => [
+                'bahans' => [
                     ['id' => $this->nasi->id, 'gram' => 200, 'porsi' => 5],
                 ],
             ])
@@ -825,23 +827,23 @@ class GiziDuaBelasKelompokTest extends TestCase
     {
         $kelompok = AKG::toAnggaranKelompok($kelompokSasaran);
 
-        $menu = MenuHarian::create([
-            'tanggal'            => $tanggal,
-            'user_id'            => $this->ahliGizi->id,
-            'nama_menu'          => $nama,
-            'status'             => 'draft',
-            'kelompok'           => $kelompok,
-            'kelompok_sasaran'   => $kelompokSasaran,
-            'jumlah_porsi'       => 1,
+        $menu = MenuHarian::forceCreate([
+            'tanggal' => $tanggal,
+            'user_id' => $this->ahliGizi->id,
+            'nama_menu' => $nama,
+            'status' => 'draft',
+            'kelompok' => $kelompok,
+            'kelompok_sasaran' => $kelompokSasaran,
+            'jumlah_porsi' => 1,
             'anggaran_per_porsi' => 15000,
-            'foto_menu'          => 'menu-foto/test.jpg',
+            'foto_menu' => 'menu-foto/test.jpg',
         ]);
 
         MenuDetailBahan::create([
-            'menu_harian_id'  => $menu->id,
+            'menu_harian_id' => $menu->id,
             'bahan_pangan_id' => $this->nasi->id,
-            'jumlah_gram'     => 200,
-            'jumlah_porsi'    => 1,
+            'jumlah_gram' => 200,
+            'jumlah_porsi' => 1,
         ]);
 
         return $menu;

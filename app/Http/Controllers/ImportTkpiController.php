@@ -6,6 +6,7 @@ use App\Models\BahanPangan;
 use App\Models\ImportLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ImportTkpiController extends Controller
 {
@@ -52,17 +53,12 @@ class ImportTkpiController extends Controller
     public function preview(Request $request)
     {
         $request->validate([
-            'csv_file' => 'required|file|max:5120',
+            'csv_file' => 'required|file|max:5120|mimes:csv,txt',
         ], [
             'csv_file.required' => 'File CSV wajib dipilih.',
             'csv_file.mimes' => 'Format harus .csv atau .txt',
             'csv_file.max' => 'Ukuran file maksimal 5MB.',
         ]);
-
-        $ekstensi = strtolower($request->file('csv_file')->getClientOriginalExtension());
-        if (! in_array($ekstensi, ['csv', 'txt'])) {
-            return back()->withErrors(['csv_file' => 'Format harus .csv atau .txt']);
-        }
 
         $path = $request->file('csv_file')->getRealPath();
         [$headers, $rows, $error] = $this->parseCsv($path);
@@ -74,8 +70,15 @@ class ImportTkpiController extends Controller
         $mapped = $this->mapKolom($headers);
         $preview = array_slice($rows, 0, 10); // max 10 baris preview
 
-        // Simpan path sementara di session
-        $tmpPath = storage_path('app/tmp_import_'.auth()->id().'.csv');
+        // Bersihkan file preview sebelumnya milik session ini (cegah orphan menumpuk)
+        $previousTmp = session('import_tmp');
+        if ($previousTmp && file_exists($previousTmp)) {
+            @unlink($previousTmp);
+        }
+
+        // Simpan path sementara di session — nama unik per preview supaya dua preview
+        // bersamaan (mis. dua tab) tidak saling menimpa file temp yang sama.
+        $tmpPath = storage_path('app/tmp_import_'.Str::uuid().'.csv');
         copy($path, $tmpPath);
 
         $originalFilename = $request->file('csv_file')->getClientOriginalName();
@@ -187,10 +190,12 @@ class ImportTkpiController extends Controller
         while (($line = fgetcsv($handle, 2000, $delimiter)) !== false) {
             if (empty($headers)) {
                 $headers = array_map(function ($h) {
-                    // Strip BOM, whitespace, dan karakter tidak terlihat
-                    $h = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', trim($h));
+                    // Strip BOM UTF-8 (jika ada di awal) dan karakter kontrol ASCII saja —
+                    // jangan buang 0x80-0xFF karena itu byte lanjutan karakter multibyte UTF-8 (mis. µ, é)
+                    $h = preg_replace('/^\xEF\xBB\xBF/', '', $h);
+                    $h = preg_replace('/[\x00-\x1F\x7F]/', '', trim($h));
 
-                    return strtolower($h);
+                    return mb_strtolower($h);
                 }, $line);
 
                 continue;

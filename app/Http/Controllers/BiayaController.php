@@ -2,19 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\HargaBahan;
 use App\Models\BahanPangan;
+use App\Models\HargaBahan;
 use App\Models\MenuHarian;
+use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class BiayaController extends Controller
 {
     // ─── Dashboard ─────────────────────────────────────────────────────────────
     public function dashboard(Request $request)
     {
-        $user  = Auth::user();
-        $bulan = $request->input('bulan', now()->format('Y-m'));
+        $user = Auth::user();
+        $request->validate(['bulan' => ['nullable', 'date_format:Y-m']]);
+        $bulan = $request->filled('bulan') ? $request->input('bulan') : now()->format('Y-m');
         [$tahun, $bln] = explode('-', $bulan);
 
         $alertSummary = ['over' => 0, 'warning' => 0, 'aman' => 0];
@@ -27,33 +32,37 @@ class BiayaController extends Controller
 
         $menus = $query->get();
 
-        foreach ($menus as $menu) {
-            $status = $menu->statusAnggaran();
+        $rekapBiaya = $menus->map(function ($m) use (&$alertSummary) {
+            // Hitung totalBiaya() sekali, derive status dari hasilnya — hindari
+            // memanggil ulang totalBiaya() lewat statusAnggaran() (audit D3).
+            $biaya = $m->totalBiaya();
+            $status = MenuHarian::deriveStatusAnggaran($biaya);
             if (isset($alertSummary[$status])) {
                 $alertSummary[$status]++;
             }
-        }
 
-        $rekapBiaya = $menus->map(fn($m) => [
-            'menu_id' => $m->id,
-            'tanggal' => $m->tanggal->format('d/m/Y'),
-            'menu'    => $m->nama_menu,
-            'biaya'   => $m->totalBiaya(),
-        ]);
+            return [
+                'menu_id' => $m->id,
+                'tanggal' => $m->tanggal->format('d/m/Y'),
+                'menu' => $m->nama_menu,
+                'biaya' => $biaya,
+                'status' => $status,
+            ];
+        });
 
-        $totalHari       = $menus->count();
-        $totalBiayaBulan = $rekapBiaya->sum(fn($r) => $r['biaya']['total_seluruh']);
-        $rataCostPorsi   = $totalHari > 0 ? $rekapBiaya->avg(fn($r) => $r['biaya']['cost_per_porsi']) : 0;
-        $rataAnggaran    = $totalHari > 0 ? $rekapBiaya->avg(fn($r) => $r['biaya']['anggaran']) : 0;
+        $totalHari = $menus->count();
+        $totalBiayaBulan = $rekapBiaya->sum(fn ($r) => $r['biaya']['total_seluruh']);
+        $rataCostPorsi = $totalHari > 0 ? $rekapBiaya->avg(fn ($r) => $r['biaya']['cost_per_porsi']) : 0;
+        $rataAnggaran = $totalHari > 0 ? $rekapBiaya->avg(fn ($r) => $r['biaya']['anggaran']) : 0;
 
-        $trendBiaya = $rekapBiaya->map(fn($r) => [
-            'tanggal'        => $r['tanggal'],
+        $trendBiaya = $rekapBiaya->map(fn ($r) => [
+            'tanggal' => $r['tanggal'],
             'cost_per_porsi' => $r['biaya']['cost_per_porsi'],
-            'anggaran'       => $r['biaya']['anggaran'],
+            'anggaran' => $r['biaya']['anggaran'],
         ])->values();
 
-        $overBudget  = $rekapBiaya->filter(fn($r) => $r['biaya']['selisih'] < 0)->count();
-        $underBudget = $rekapBiaya->filter(fn($r) => $r['biaya']['selisih'] >= 0)->count();
+        $overBudget = $rekapBiaya->filter(fn ($r) => $r['status'] === 'over')->count();
+        $underBudget = $rekapBiaya->filter(fn ($r) => $r['status'] !== 'over')->count();
 
         return view('biaya.dashboard', compact(
             'bulan', 'rekapBiaya', 'trendBiaya',
@@ -72,7 +81,7 @@ class BiayaController extends Controller
 
         $hargaList = HargaBahan::with('bahanPangan')
             ->join('bahan_pangans', 'harga_bahans.bahan_pangan_id', '=', 'bahan_pangans.id')
-            ->when($q, fn($query) => $query->where('bahan_pangans.nama_bahan', 'like', "%{$q}%"))
+            ->when($q, fn ($query) => $query->where('bahan_pangans.nama_bahan', 'like', "%{$q}%"))
             ->orderBy('bahan_pangans.nama_bahan')
             ->orderByDesc('harga_bahans.berlaku_mulai')
             ->select('harga_bahans.*')
@@ -92,27 +101,38 @@ class BiayaController extends Controller
     {
         // dilindungi middleware role:akuntan
 
+        // berlaku_sampai sengaja tidak diterima dari request: tarif immutable, penutupan
+        // periode dihitung sistem (lihat trait PeriodeBerlaku) supaya tidak ada rentang
+        // tumpang tindih yang bikin hargaAktif() non-deterministik.
         $data = $request->validate([
             'bahan_pangan_id' => 'required|exists:bahan_pangans,id',
-            'harga_per_kg'    => 'required|numeric|min:0',
-            'berlaku_mulai'   => 'required|date',
-            'berlaku_sampai'  => 'nullable|date|after_or_equal:berlaku_mulai',
-            'keterangan'      => 'nullable|string|max:200',
+            'harga_per_kg' => 'required|numeric|min:0',
+            'berlaku_mulai' => 'required|date',
+            'keterangan' => 'nullable|string|max:200',
         ]);
 
-        $data['harga_per_100g'] = $data['harga_per_kg'] / 10;
-        unset($data['harga_per_kg']);
+        $mulaiStr = Carbon::parse($data['berlaku_mulai'])->toDateString();
 
-        // Tutup semua record open-ended milik bahan ini yang mulai sebelum tarif baru
-        $berlakuSampaiLama = \Carbon\Carbon::parse($data['berlaku_mulai'])
-            ->subDay()->toDateString();
-
-        HargaBahan::where('bahan_pangan_id', $data['bahan_pangan_id'])
-            ->whereNull('berlaku_sampai')
-            ->where('berlaku_mulai', '<', $data['berlaku_mulai'])
-            ->update(['berlaku_sampai' => $berlakuSampaiLama]);
-
-        HargaBahan::create($data);
+        try {
+            // Penutupan tarif lama + pembuatan tarif baru harus satu unit: kegagalan di
+            // tengah jalan meninggalkan bahan tanpa tarif aktif (hargaAktif() jatuh ke 0).
+            DB::transaction(function () use ($data, $mulaiStr) {
+                HargaBahan::tetapkanPeriode(
+                    ['bahan_pangan_id' => $data['bahan_pangan_id']],
+                    $mulaiStr,
+                    [
+                        'harga_per_100g' => $data['harga_per_kg'] / 10,
+                        'keterangan' => $data['keterangan'] ?? null,
+                    ]
+                );
+            });
+        } catch (UniqueConstraintViolationException) {
+            // Dua akuntan submit tanggal yang sama secara bersamaan — unique index DB
+            // yang menahannya setelah pre-check lolos. Jawab sebagai error validasi.
+            throw ValidationException::withMessages([
+                'berlaku_mulai' => 'Sudah ada tarif untuk bahan ini yang berlaku mulai tanggal tersebut. Pilih tanggal lain.',
+            ]);
+        }
 
         return redirect()->route('biaya.harga.index')
             ->with('success', 'Harga bahan berhasil disimpan.');
@@ -136,23 +156,21 @@ class BiayaController extends Controller
     {
         // dilindungi middleware role:akuntan
 
-        $isAktif   = $harga->berlaku_sampai === null;
-        $bahanId   = $harga->bahan_pangan_id;
-        $hargaId   = $harga->id;
+        $isAktif = $harga->berlaku_sampai === null;
+        $bahanId = $harga->bahan_pangan_id;
 
-        $harga->delete();
+        // Hapus + pemulihan tarif aktif harus atomik: tanpa transaksi, kegagalan di
+        // langkah kedua meninggalkan bahan tanpa tarif open-ended sama sekali.
+        DB::transaction(function () use ($harga, $isAktif, $bahanId) {
+            $harga->delete();
 
-        // Jika yang dihapus adalah tarif aktif (open-ended), aktifkan kembali tarif sebelumnya
-        if ($isAktif) {
-            $sebelumnya = HargaBahan::where('bahan_pangan_id', $bahanId)
-                ->whereKeyNot($hargaId)
-                ->orderByDesc('berlaku_mulai')
-                ->first();
-
-            if ($sebelumnya) {
-                $sebelumnya->update(['berlaku_sampai' => null]);
+            // Jika yang dihapus adalah tarif aktif (open-ended), buka kembali tarif terakhir
+            // yang tersisa — bukan sekadar "yang sebelumnya", supaya tidak tumpang tindih
+            // dengan periode yang mulai setelahnya.
+            if ($isAktif) {
+                HargaBahan::pastikanPeriodeTerakhirTerbuka(['bahan_pangan_id' => $bahanId]);
             }
-        }
+        });
 
         $pesan = $isAktif
             ? 'Tarif aktif dihapus. Tarif sebelumnya diaktifkan kembali.'
@@ -166,6 +184,7 @@ class BiayaController extends Controller
     {
         $menu->load('detailBahans.bahanPangan');
         $biaya = $menu->totalBiaya();
+
         return view('biaya.detail-menu', compact('menu', 'biaya'));
     }
 
@@ -173,35 +192,41 @@ class BiayaController extends Controller
     public function apiEstimasi(Request $request)
     {
         $tanggal = $request->input('tanggal', today()->toDateString());
-        $items   = $request->input('items', []);
-        $porsi   = max((int) $request->input('jumlah_porsi', 1), 1);
+        $items = $request->input('items', []);
+        $porsi = max((int) $request->input('jumlah_porsi', 1), 1);
 
-        $total  = 0;
+        $total = 0;
         $detail = [];
 
-        foreach ($items as $item) {
-            $id   = (int) ($item['bahan_pangan_id'] ?? 0);
-            $gram = (float) ($item['jumlah_gram'] ?? 0);
-            if (!$id || !$gram) continue;
+        // Batch-load harga + nama bahan sekali per request, bukan per item (audit D3).
+        $ids = collect($items)->map(fn ($item) => (int) ($item['bahan_pangan_id'] ?? 0))->filter()->unique()->all();
+        $hargaMap = HargaBahan::hargaAktifBatch($ids, $tanggal);
+        $bahanMap = BahanPangan::whereIn('id', $ids)->get(['id', 'nama_bahan'])->keyBy('id');
 
-            $harga = HargaBahan::hargaAktif($id, $tanggal);
-            $biaya = ($gram / 100) * $harga;
+        foreach ($items as $item) {
+            $id = (int) ($item['bahan_pangan_id'] ?? 0);
+            $gram = (float) ($item['jumlah_gram'] ?? 0);
+            if (! $id || ! $gram) {
+                continue;
+            }
+
+            $harga = $hargaMap[$id] ?? 0.0;
+            $biaya = ($gram / 100) * $harga * $porsi;
             $total += $biaya;
 
-            $bahan    = BahanPangan::find($id, ['nama_bahan']);
             $detail[] = [
                 'bahan_pangan_id' => $id,
-                'nama'            => $bahan?->nama_bahan,
-                'gram'            => $gram,
-                'harga_per_100g'  => $harga,
-                'biaya'           => round($biaya, 0),
+                'nama' => $bahanMap->get($id)?->nama_bahan,
+                'gram' => $gram,
+                'harga_per_100g' => $harga,
+                'biaya' => round($biaya, 0),
             ];
         }
 
         return response()->json([
-            'total_seluruh'  => round($total, 0),
+            'total_seluruh' => round($total, 0),
             'cost_per_porsi' => round($total / $porsi, 0),
-            'detail'         => $detail,
+            'detail' => $detail,
         ]);
     }
 

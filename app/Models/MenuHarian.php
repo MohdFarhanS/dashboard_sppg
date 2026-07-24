@@ -2,15 +2,21 @@
 
 namespace App\Models;
 
+use App\Constants\AKG;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MenuHarian extends Model
 {
+    /**
+     * 'status', 'user_id', dan 'anggaran_per_porsi' sengaja dikeluarkan —
+     * hanya boleh diset eksplisit (forceCreate/forceFill) via controller,
+     * tidak lewat mass-assignment dari input request.
+     */
     protected $fillable = [
-        'tanggal', 'user_id', 'nama_menu', 'status', 'kelompok',
-        'catatan', 'anggaran_per_porsi', 'jumlah_porsi', 'catatan_anggaran',
+        'tanggal', 'nama_menu', 'kelompok',
+        'catatan', 'jumlah_porsi', 'catatan_anggaran',
         'kelompok_sasaran', 'foto_menu',
     ];
 
@@ -28,12 +34,16 @@ class MenuHarian extends Model
 
     public function totalGizi(): array
     {
-        $keys = ['energi','protein','lemak','karbohidrat','serat','kalsium','besi','vit_c'];
+        $this->loadMissing('detailBahans.bahanPangan');
+
+        $keys = ['energi', 'protein', 'lemak', 'karbohidrat', 'serat', 'kalsium', 'besi', 'vit_c'];
         $total = array_fill_keys($keys, 0);
 
         foreach ($this->detailBahans as $detail) {
             $b = $detail->bahanPangan;
-            if (!$b) continue;
+            if (! $b) {
+                continue;
+            }
             // jumlah_porsi per bahan = total sajian batch (= menu.jumlah_porsi untuk bahan yg disajikan ke semua orang)
             $faktor = ($detail->jumlah_gram * (($b->bdd ?? 100) / 100)) / 100 * $detail->jumlah_porsi;
             foreach ($keys as $k) {
@@ -43,7 +53,8 @@ class MenuHarian extends Model
 
         // Bagi dengan jumlah_porsi untuk mendapatkan gizi PER ORANG (per porsi)
         $jumlahPorsi = max((int) $this->jumlah_porsi, 1);
-        return array_map(fn($v) => round($v / $jumlahPorsi, 2), $total);
+
+        return array_map(fn ($v) => round($v / $jumlahPorsi, 2), $total);
     }
 
     /**
@@ -52,27 +63,32 @@ class MenuHarian extends Model
      */
     public function totalBiaya(): array
     {
+        $this->loadMissing('detailBahans.bahanPangan');
+
         $totalBiayaSeluruh = 0;
         $detail = [];
 
         foreach ($this->detailBahans as $d) {
             $b = $d->bahanPangan;
-            if (!$b) continue;
+            if (! $b) {
+                continue;
+            }
 
             // Menu final: pakai snapshot harga yang dikunci saat finalisasi.
             // Menu draft atau snapshot belum ada: hitung ulang dari HargaBahan.
-            $hargaPer100g = ($this->status === 'final' && $d->harga_per_100g !== null)
+            $hargaPer100g = ($this->status === 'final')
                 ? (float) $d->harga_per_100g
-                : \App\Models\HargaBahan::hargaAktif($b->id, $this->tanggal->toDateString());
+                : HargaBahan::hargaAktif($b->id, $this->tanggal->toDateString());
 
             $biaya = ($d->jumlah_gram / 100) * $hargaPer100g * $d->jumlah_porsi; // ← tambah × jumlah_porsi
             $totalBiayaSeluruh += $biaya;
 
             $detail[] = [
-                'nama'           => $b->nama_bahan,
-                'gram'           => $d->jumlah_gram,
+                'nama' => $b->nama_bahan,
+                'kategori' => $b->kategori ?? 'Lainnya',
+                'gram' => $d->jumlah_gram,
                 'harga_per_100g' => $hargaPer100g,
-                'biaya'          => round($biaya, 0),
+                'biaya' => round($biaya, 0),
             ];
         }
 
@@ -82,18 +98,18 @@ class MenuHarian extends Model
         // Menu draft: hitung ulang dari AnggaranPorsi agar selalu pakai tarif terkini.
         $anggaran = ($this->status === 'final' && $this->anggaran_per_porsi > 0)
             ? (float) $this->anggaran_per_porsi
-            : \App\Models\AnggaranPorsi::aktif($this->tanggal->toDateString(), $this->kelompok);
+            : AnggaranPorsi::aktif($this->tanggal->toDateString(), $this->kelompok);
 
         return [
-            'total_seluruh'   => round($totalBiayaSeluruh, 0),
-            'cost_per_porsi'  => round($totalBiayaSeluruh / $jumlahPorsi, 0),
-            'anggaran'        => $anggaran,
-            'selisih'         => round($anggaran - ($totalBiayaSeluruh / $jumlahPorsi), 0),
+            'total_seluruh' => round($totalBiayaSeluruh, 0),
+            'cost_per_porsi' => round($totalBiayaSeluruh / $jumlahPorsi, 0),
+            'anggaran' => $anggaran,
+            'selisih' => round($anggaran - ($totalBiayaSeluruh / $jumlahPorsi), 0),
             'persen_anggaran' => $anggaran > 0
                 ? round(($totalBiayaSeluruh / $jumlahPorsi / $anggaran) * 100, 1)
                 : 0,
-            'detail'          => $detail,
-            'jumlah_porsi'    => $jumlahPorsi,
+            'detail' => $detail,
+            'jumlah_porsi' => $jumlahPorsi,
         ];
     }
 
@@ -110,12 +126,13 @@ class MenuHarian extends Model
         if ($this->status === 'final' && $this->anggaran_per_porsi > 0) {
             return (float) $this->anggaran_per_porsi;
         }
-        return (float) \App\Models\AnggaranPorsi::aktif($this->tanggal->toDateString(), $this->kelompok);
+
+        return (float) AnggaranPorsi::aktif($this->tanggal->toDateString(), $this->kelompok);
     }
 
     public function getLabelKelompokAttribute(): string
     {
-        return \App\Models\AnggaranPorsi::KELOMPOK_LABELS[$this->kelompok] ?? '-';
+        return AnggaranPorsi::KELOMPOK_LABELS[$this->kelompok] ?? '-';
     }
 
     /**
@@ -124,14 +141,28 @@ class MenuHarian extends Model
      */
     public function statusAnggaran(): string
     {
-        $biaya = $this->totalBiaya();
+        return static::deriveStatusAnggaran($this->totalBiaya());
+    }
 
-        if ($biaya['cost_per_porsi'] === 0) return 'belum_ada_data';
+    /**
+     * Turunkan status anggaran dari array hasil totalBiaya() yang sudah dihitung
+     * sebelumnya, tanpa perlu memanggil ulang totalBiaya() (hindari N+1).
+     */
+    public static function deriveStatusAnggaran(array $biaya): string
+    {
+        if ($biaya['cost_per_porsi'] <= 0 || $biaya['anggaran'] <= 0) {
+            return 'belum_ada_data';
+        }
 
         $persen = $biaya['persen_anggaran'];
 
-        if ($persen > 100) return 'over';
-        if ($persen >= 85) return 'warning';
+        if ($persen > 100) {
+            return 'over';
+        }
+        if ($persen >= 85) {
+            return 'warning';
+        }
+
         return 'aman';
     }
 
@@ -145,7 +176,7 @@ class MenuHarian extends Model
 
     public function akgTarget(string $mealType = 'siang'): array
     {
-        return \App\Constants\AKG::targetSajian(
+        return AKG::targetSajian(
             $this->kelompok_sasaran ?? 'SD_4_6',
             $mealType
         );
@@ -153,7 +184,7 @@ class MenuHarian extends Model
 
     public function evaluasiGizi(string $mealType = 'siang'): array
     {
-        $gizi   = $this->totalGizi();
+        $gizi = $this->totalGizi();
         $target = $this->akgTarget($mealType);
         $result = [];
         foreach (['energi', 'protein', 'lemak', 'karbohidrat'] as $k) {
@@ -161,12 +192,13 @@ class MenuHarian extends Model
                 ? round(($gizi[$k] ?? 0) / $target[$k] * 100, 1)
                 : 0;
             $result[$k] = [
-                'pct'    => $pct,
+                'pct' => $pct,
                 'aktual' => $gizi[$k] ?? 0,
                 'target' => $target[$k],
                 'status' => $pct < 80 ? 'kurang' : ($pct > 120 ? 'lebih' : 'cukup'),
             ];
         }
+
         return $result;
     }
 }

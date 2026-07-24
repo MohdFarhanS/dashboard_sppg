@@ -19,7 +19,7 @@ return new class extends Migration
             $table->enum('status', ['draft', 'final'])->default('draft');
             $table->text('catatan')->nullable();
             $table->timestamps();
-        
+
             $table->unique(['tanggal']); // 1 hari 1 record per unit
         });
     }

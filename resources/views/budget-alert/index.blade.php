@@ -15,10 +15,12 @@
 .alert-card.over    { border-left-color: #dc3545; }
 .alert-card.warning { border-left-color: #ffc107; }
 .alert-card.aman    { border-left-color: #0f4c81; }
+.alert-card.belum_ada_data { border-left-color: #adb5bd; }
 
 .severity-badge.over    { background:#fce4e4; color:#c62828; }
 .severity-badge.warning { background:#fff8e1; color:#f57c00; }
 .severity-badge.aman    { background:#daeeff; color:#0f4c81; }
+.severity-badge.belum_ada_data { background:#e9ecef; color:#495057; }
 
 .stat-alert {
     border-radius: 12px;
@@ -52,9 +54,19 @@
                 Monitoring menu yang melebihi atau mendekati batas anggaran
             </small>
         </div>
-        <a href="{{ route('biaya.dashboard') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-chart-line me-1"></i>Dashboard Biaya
-        </a>
+        <div class="d-flex gap-2">
+            @if($adaAlertBelumDilihat ?? false)
+            <form method="POST" action="{{ route('budget-alert.dismiss') }}">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-check-double me-1"></i>Tandai Sudah Dilihat
+                </button>
+            </form>
+            @endif
+            <a href="{{ route('biaya.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-chart-line me-1"></i>Dashboard Biaya
+            </a>
+        </div>
     </div>
 
     {{-- Filter --}}
@@ -183,6 +195,7 @@
                               style="font-size:.75rem;">
                             @if($a['status'] === 'over') 🚨 Over Budget
                             @elseif($a['status'] === 'warning') ⚠️ Mendekati
+                            @elseif($a['status'] === 'belum_ada_data') ➖ Belum Diatur
                             @else ✅ Aman
                             @endif
                         </span>

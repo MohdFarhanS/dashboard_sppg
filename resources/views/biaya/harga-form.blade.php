@@ -18,6 +18,7 @@
         <div>
             Menambahkan tarif baru akan <strong>otomatis menutup</strong> tarif aktif sebelumnya untuk bahan yang sama
             — berlaku sampai = tanggal sebelum tarif baru mulai berlaku.
+            Satu bahan hanya boleh punya <strong>satu tarif per tanggal mulai</strong>; tanggal yang sudah dipakai akan ditolak.
         </div>
     </div>
 
@@ -95,6 +96,7 @@
 @push('scripts')
 <script>
 (function () {
+    const API_BAHAN_SEARCH_URL = @json(route('api.bahan-pangan.search'));
     const searchInput = document.getElementById('bahan-search');
     const hiddenInput = document.getElementById('bahan-pangan-id');
     const dropdown    = document.getElementById('bahan-dropdown');
@@ -109,7 +111,8 @@
 
         debounceTimer = setTimeout(async () => {
             try {
-                const res  = await fetch(`/api/bahan-pangan/search?q=${encodeURIComponent(q)}&limit=15`);
+                const res  = await fetch(`${API_BAHAN_SEARCH_URL}?q=${encodeURIComponent(q)}&limit=15`);
+                if (!res.ok) { dropdown.style.display = 'none'; return; }
                 const data = await res.json();
                 renderDropdown(data);
             } catch { dropdown.style.display = 'none'; }

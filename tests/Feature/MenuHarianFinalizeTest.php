@@ -10,6 +10,7 @@ use App\Models\MenuHarian;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -64,7 +65,7 @@ class MenuHarianFinalizeTest extends TestCase
             'created_by' => $this->ahliGizi->id,
         ]);
 
-        $this->menu = MenuHarian::create([
+        $this->menu = MenuHarian::forceCreate([
             'tanggal' => '2026-01-15',
             'user_id' => $this->ahliGizi->id,
             'nama_menu' => 'Menu Januari Test',
@@ -150,7 +151,7 @@ class MenuHarianFinalizeTest extends TestCase
             'created_by' => $this->ahliGizi->id,
         ]);
 
-        $menuFebruari = MenuHarian::create([
+        $menuFebruari = MenuHarian::forceCreate([
             'tanggal' => '2026-02-10',
             'user_id' => $this->ahliGizi->id,
             'nama_menu' => 'Menu Februari Test',
@@ -321,6 +322,54 @@ class MenuHarianFinalizeTest extends TestCase
         $this->assertEquals('draft', $this->menu->status);
     }
 
+    // C5: dua submit finalize bersamaan pada menu draft yang sama tak boleh
+    // sama-sama lolos dan menimpa snapshot anggaran/harga secara parsial.
+    public function test_finalize_race_dua_submit_bersamaan_tidak_menimpa_snapshot(): void
+    {
+        // Listener meniru request finalize lain yang menang race: begitu transaksi
+        // kita melakukan SELECT ... FOR UPDATE (lockForUpdate), "request B" langsung
+        // commit finalize duluan di luar transaksi kita (raw query, tak ikut rollback).
+        $requestLainMenang = false;
+        DB::listen(function ($query) use (&$requestLainMenang) {
+            if ($requestLainMenang
+                || ! str_contains($query->sql, 'menu_harians')
+                || ! str_starts_with(strtolower(ltrim($query->sql)), 'select')) {
+                return;
+            }
+            $requestLainMenang = true;
+
+            DB::table('menu_harians')->where('id', $this->menu->id)->update([
+                'status' => 'final',
+                'anggaran_per_porsi' => 99999,
+                'updated_at' => now(),
+            ]);
+            DB::table('menu_detail_bahans')->where('menu_harian_id', $this->menu->id)->update([
+                'harga_per_100g' => 7777,
+                'updated_at' => now(),
+            ]);
+        });
+
+        $response = $this->actingAs($this->ahliGizi)
+            ->patch(route('menu-harian.finalize', $this->menu));
+
+        $this->assertTrue($requestLainMenang, 'C5: skenario race tidak terpicu - lockForUpdate tidak menjalankan SELECT ke menu_harians');
+
+        $response->assertRedirect(route('menu-harian.show', $this->menu))
+            ->assertSessionHas('error', 'Menu sudah berstatus final.');
+
+        $this->menu->refresh();
+        $this->assertEquals('final', $this->menu->status);
+        // Snapshot request B harus tetap utuh - request kita (yang kalah race)
+        // tidak boleh menimpa dengan hasil hitung ulangnya sendiri.
+        $this->assertEquals(99999.0, (float) $this->menu->anggaran_per_porsi,
+            'C5: request yang kalah race tidak boleh menimpa anggaran_per_porsi hasil finalize duluan.'
+        );
+        $detail = $this->menu->detailBahans->first();
+        $this->assertEquals(7777.0, (float) $detail->harga_per_100g,
+            'C5: request yang kalah race tidak boleh menimpa snapshot harga hasil finalize duluan.'
+        );
+    }
+
     public function test_finalize_berhasil_setelah_foto_diupload(): void
     {
         $this->menu->update(['foto_menu' => 'menu-foto/test.jpg']);
@@ -357,7 +406,7 @@ class MenuHarianFinalizeTest extends TestCase
     {
         Storage::fake('public');
 
-        $this->menu->update(['status' => 'final']);
+        $this->menu->forceFill(['status' => 'final'])->save();
         $file = UploadedFile::fake()->create('menu.jpg', 100, 'image/jpeg');
 
         $this->actingAs($this->ahliGizi)
@@ -438,7 +487,7 @@ class MenuHarianFinalizeTest extends TestCase
 
     public function test_update_menu_final_ditolak(): void
     {
-        $this->menu->update(['status' => 'final']);
+        $this->menu->forceFill(['status' => 'final'])->save();
 
         $this->actingAs($this->ahliGizi)
             ->put(route('menu-harian.update', $this->menu), [
@@ -453,7 +502,7 @@ class MenuHarianFinalizeTest extends TestCase
 
     public function test_destroy_menu_final_ditolak(): void
     {
-        $this->menu->update(['status' => 'final']);
+        $this->menu->forceFill(['status' => 'final'])->save();
 
         $this->actingAs($this->ahliGizi)
             ->delete(route('menu-harian.destroy', $this->menu))
@@ -465,7 +514,7 @@ class MenuHarianFinalizeTest extends TestCase
 
     public function test_simpan_simulasi_menu_final_ditolak(): void
     {
-        $this->menu->update(['status' => 'final']);
+        $this->menu->forceFill(['status' => 'final'])->save();
 
         $this->actingAs($this->ahliGizi)
             ->post(route('simulasi.simpan'), [

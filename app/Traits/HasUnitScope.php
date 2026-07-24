@@ -2,8 +2,6 @@
 
 namespace App\Traits;
 
-use Illuminate\Support\Facades\Auth;
-
 trait HasUnitScope
 {
     public static function activeUnit(): string

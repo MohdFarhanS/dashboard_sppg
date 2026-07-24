@@ -12,8 +12,8 @@ return new class extends Migration
             // 'balita_sd3'       = Balita hingga Kelas 3 SD
             // 'sd4_ibu_menyusui' = Kelas 4 SD hingga Ibu Menyusui
             $table->enum('kelompok', ['balita_sd3', 'sd4_ibu_menyusui'])
-                  ->default('sd4_ibu_menyusui')
-                  ->after('status');
+                ->default('sd4_ibu_menyusui')
+                ->after('status');
         });
     }
 

@@ -30,7 +30,9 @@ class NutrisiPerPorsiTest extends TestCase
     use RefreshDatabase;
 
     private User $ahliGizi;
+
     private BahanPangan $nasi;
+
     private BahanPangan $ayam;
 
     protected function setUp(): void
@@ -40,58 +42,58 @@ class NutrisiPerPorsiTest extends TestCase
         $this->ahliGizi = User::factory()->ahliGizi()->create();
 
         $this->nasi = BahanPangan::create([
-            'kode'        => 'BBT-001',
-            'nama_bahan'  => 'Nasi Putih (BBT)',
-            'kategori'    => 'Serealia',
-            'bdd'         => 100,
-            'energi'      => 180,
-            'protein'     => 4,
-            'lemak'       => 0,
+            'kode' => 'BBT-001',
+            'nama_bahan' => 'Nasi Putih (BBT)',
+            'kategori' => 'Serealia',
+            'bdd' => 100,
+            'energi' => 180,
+            'protein' => 4,
+            'lemak' => 0,
             'karbohidrat' => 40,
-            'serat'       => 0,
-            'kalsium'     => 0,
-            'besi'        => 0,
-            'vit_c'       => 0,
-            'is_active'   => true,
+            'serat' => 0,
+            'kalsium' => 0,
+            'besi' => 0,
+            'vit_c' => 0,
+            'is_active' => true,
         ]);
 
         $this->ayam = BahanPangan::create([
-            'kode'        => 'BBT-002',
-            'nama_bahan'  => 'Daging Ayam (BBT)',
-            'kategori'    => 'Daging',
-            'bdd'         => 50,
-            'energi'      => 200,
-            'protein'     => 20,
-            'lemak'       => 10,
+            'kode' => 'BBT-002',
+            'nama_bahan' => 'Daging Ayam (BBT)',
+            'kategori' => 'Daging',
+            'bdd' => 50,
+            'energi' => 200,
+            'protein' => 20,
+            'lemak' => 10,
             'karbohidrat' => 0,
-            'serat'       => 0,
-            'kalsium'     => 0,
-            'besi'        => 0,
-            'vit_c'       => 0,
-            'is_active'   => true,
+            'serat' => 0,
+            'kalsium' => 0,
+            'besi' => 0,
+            'vit_c' => 0,
+            'is_active' => true,
         ]);
 
         HargaBahan::create([
             'bahan_pangan_id' => $this->nasi->id,
-            'harga_per_100g'  => 2000,
-            'berlaku_mulai'   => '2026-01-01',
-            'berlaku_sampai'  => null,
+            'harga_per_100g' => 2000,
+            'berlaku_mulai' => '2026-01-01',
+            'berlaku_sampai' => null,
         ]);
 
         HargaBahan::create([
             'bahan_pangan_id' => $this->ayam->id,
-            'harga_per_100g'  => 5000,
-            'berlaku_mulai'   => '2026-01-01',
-            'berlaku_sampai'  => null,
+            'harga_per_100g' => 5000,
+            'berlaku_mulai' => '2026-01-01',
+            'berlaku_sampai' => null,
         ]);
 
         foreach (['sd4_ibu_menyusui', 'balita_sd3'] as $kelompok) {
             AnggaranPorsi::create([
-                'kelompok'           => $kelompok,
+                'kelompok' => $kelompok,
                 'anggaran_per_porsi' => 15000,
-                'berlaku_mulai'      => '2026-01-01',
-                'berlaku_sampai'     => null,
-                'created_by'         => $this->ahliGizi->id,
+                'berlaku_mulai' => '2026-01-01',
+                'berlaku_sampai' => null,
+                'created_by' => $this->ahliGizi->id,
             ]);
         }
     }
@@ -101,8 +103,8 @@ class NutrisiPerPorsiTest extends TestCase
         return $this->actingAs($this->ahliGizi)
             ->postJson(route('simulasi.kalkulasi'), array_merge([
                 'jumlah_porsi' => 1,
-                'tanggal'      => '2026-05-08',
-                'kelompok'     => 'SD_4_6',
+                'tanggal' => '2026-05-08',
+                'kelompok' => 'SD_4_6',
             ], $payload));
     }
 
@@ -120,10 +122,10 @@ class NutrisiPerPorsiTest extends TestCase
             'bahans' => [['id' => $this->nasi->id, 'gram' => 100, 'porsi' => 1]],
         ])->assertOk()->json('gizi');
 
-        $this->assertEquals(180.0, $gizi['energi'],      'energi harus 180 kkal (100g × 180/100g)');
-        $this->assertEquals(4.0,   $gizi['protein'],     'protein harus 4 g');
-        $this->assertEquals(0.0,   $gizi['lemak'],       'lemak harus 0 g');
-        $this->assertEquals(40.0,  $gizi['karbohidrat'], 'karbohidrat harus 40 g');
+        $this->assertEquals(180.0, $gizi['energi'], 'energi harus 180 kkal (100g × 180/100g)');
+        $this->assertEquals(4.0, $gizi['protein'], 'protein harus 4 g');
+        $this->assertEquals(0.0, $gizi['lemak'], 'lemak harus 0 g');
+        $this->assertEquals(40.0, $gizi['karbohidrat'], 'karbohidrat harus 40 g');
     }
 
     /**
@@ -140,10 +142,10 @@ class NutrisiPerPorsiTest extends TestCase
             'bahans' => [['id' => $this->ayam->id, 'gram' => 100, 'porsi' => 1]],
         ])->assertOk()->json('gizi');
 
-        $this->assertEquals(100.0, $gizi['energi'],      'energi harus 100 kkal (50% dari 200 kkal/100g)');
-        $this->assertEquals(10.0,  $gizi['protein'],     'protein harus 10 g (50% dari 20 g/100g)');
-        $this->assertEquals(5.0,   $gizi['lemak'],       'lemak harus 5 g (50% dari 10 g/100g)');
-        $this->assertEquals(0.0,   $gizi['karbohidrat'], 'karbohidrat harus 0 g');
+        $this->assertEquals(100.0, $gizi['energi'], 'energi harus 100 kkal (50% dari 200 kkal/100g)');
+        $this->assertEquals(10.0, $gizi['protein'], 'protein harus 10 g (50% dari 20 g/100g)');
+        $this->assertEquals(5.0, $gizi['lemak'], 'lemak harus 5 g (50% dari 10 g/100g)');
+        $this->assertEquals(0.0, $gizi['karbohidrat'], 'karbohidrat harus 0 g');
     }
 
     /**
@@ -162,10 +164,10 @@ class NutrisiPerPorsiTest extends TestCase
             ],
         ])->assertOk()->json('gizi');
 
-        $this->assertEquals(460.0, $gizi['energi'],      'energi total = 360 + 100 = 460 kkal');
-        $this->assertEquals(18.0,  $gizi['protein'],     'protein total = 8 + 10 = 18 g');
-        $this->assertEquals(5.0,   $gizi['lemak'],       'lemak total = 0 + 5 = 5 g');
-        $this->assertEquals(80.0,  $gizi['karbohidrat'], 'karbo total = 80 + 0 = 80 g');
+        $this->assertEquals(460.0, $gizi['energi'], 'energi total = 360 + 100 = 460 kkal');
+        $this->assertEquals(18.0, $gizi['protein'], 'protein total = 8 + 10 = 18 g');
+        $this->assertEquals(5.0, $gizi['lemak'], 'lemak total = 0 + 5 = 5 g');
+        $this->assertEquals(80.0, $gizi['karbohidrat'], 'karbo total = 80 + 0 = 80 g');
     }
 
     /**
@@ -223,20 +225,20 @@ class NutrisiPerPorsiTest extends TestCase
 
         $pctTkPaud = $this->actingAs($this->ahliGizi)
             ->postJson(route('simulasi.kalkulasi'), [
-                'bahans'       => $bahans,
+                'bahans' => $bahans,
                 'jumlah_porsi' => 1,
-                'tanggal'      => '2026-05-08',
-                'kelompok'     => 'TK_PAUD',
+                'tanggal' => '2026-05-08',
+                'kelompok' => 'TK_PAUD',
             ])
             ->assertOk()
             ->json('persen_akg.energi');
 
         $pctSma = $this->actingAs($this->ahliGizi)
             ->postJson(route('simulasi.kalkulasi'), [
-                'bahans'       => $bahans,
+                'bahans' => $bahans,
                 'jumlah_porsi' => 1,
-                'tanggal'      => '2026-05-08',
-                'kelompok'     => 'SMA',
+                'tanggal' => '2026-05-08',
+                'kelompok' => 'SMA',
             ])
             ->assertOk()
             ->json('persen_akg.energi');

@@ -14,10 +14,10 @@ class HargaBahanFactory extends Factory
     {
         return [
             'bahan_pangan_id' => BahanPangan::factory(),
-            'harga_per_100g'  => fake()->numberBetween(500, 10000),
-            'berlaku_mulai'   => '2026-01-01',
-            'berlaku_sampai'  => null,
-            'keterangan'      => null,
+            'harga_per_100g' => fake()->numberBetween(500, 10000),
+            'berlaku_mulai' => '2026-01-01',
+            'berlaku_sampai' => null,
+            'keterangan' => null,
         ];
     }
 

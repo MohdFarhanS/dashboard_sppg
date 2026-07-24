@@ -2,13 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Pagination\Paginator;
 use App\Models\MenuHarian;
 use App\Models\PesanMasuk;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,43 +28,50 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrapFive();
 
         View::composer(['partials.navbar', 'partials.sidebar'], function ($view) {
-            if (!Auth::check()) return;
-            if (!Schema::hasTable('menu_harians')) {
+            if (! Auth::check()) {
+                return;
+            }
+            if (! Schema::hasTable('menu_harians')) {
                 $view->with('navAlertCount', 0);
                 $view->with('navAlerts', []);
+
                 return;
             }
 
-            $user         = Auth::user();
-            $totalAlert   = 0;
-            $navAlerts    = [];
+            $user = Auth::user();
+            $totalAlert = 0;
+            $navAlerts = [];
 
             if ($user->hasAnyRole(['ketua_sppg', 'akuntan'])) {
                 $today = today();
-            
+
                 $query = MenuHarian::with('detailBahans.bahanPangan')
                     ->where('status', 'final')
-                    ->whereYear('tanggal',  $today->year)
+                    ->whereYear('tanggal', $today->year)
                     ->whereMonth('tanggal', $today->month);
 
                 $dismissedIds = session('dismissed_alert_ids', []);
 
                 foreach ($query->get() as $menu) {
                     $s = $menu->statusAnggaran();
-                    if (!in_array($s, ['over', 'warning'])) continue;
-                    if (in_array($menu->id, $dismissedIds)) continue;
+                    if (! in_array($s, ['over', 'warning'])) {
+                        continue;
+                    }
+                    if (in_array($menu->id, $dismissedIds)) {
+                        continue;
+                    }
 
                     $totalAlert++;
                     $navAlerts[] = [
-                        'type'    => $s === 'over' ? 'danger' : 'warning',
-                        'msg'     => 'Menu ' . ($menu->nama_menu ?? $menu->tanggal->format('d/m/Y'))
-                                     . ($s === 'over' ? ' melebihi anggaran' : ' mendekati batas anggaran'),
-                        'time'    => $menu->tanggal->format('d/m/Y'),
+                        'type' => $s === 'over' ? 'danger' : 'warning',
+                        'msg' => 'Menu '.($menu->nama_menu ?? $menu->tanggal->format('d/m/Y'))
+                                     .($s === 'over' ? ' melebihi anggaran' : ' mendekati batas anggaran'),
+                        'time' => $menu->tanggal->format('d/m/Y'),
                         'menu_id' => $menu->id,
                     ];
                 }
             }
-        
+
             $view->with('navAlertCount', $totalAlert);
             $view->with('navAlerts', array_slice($navAlerts, 0, 5));
 

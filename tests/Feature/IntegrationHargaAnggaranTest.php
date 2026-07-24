@@ -9,6 +9,7 @@ use App\Models\HargaBahan;
 use App\Models\MenuDetailBahan;
 use App\Models\MenuHarian;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -42,17 +43,26 @@ class IntegrationHargaAnggaranTest extends TestCase
     use RefreshDatabase;
 
     // ─── Konstanta skenario ────────────────────────────────────────────
-    private const HARGA_JAN            = 2000.0;   // /100g
-    private const HARGA_FEB            = 3500.0;   // /100g
-    private const ANGGARAN_BALITA_JAN  = 8000.0;
-    private const ANGGARAN_SD4_JAN     = 10000.0;
-    private const ANGGARAN_BALITA_FEB  = 10000.0;
-    private const ANGGARAN_SD4_FEB     = 14000.0;
-    private const GRAM                 = 200;
-    private const COST_JAN             = self::GRAM * self::HARGA_JAN / 100;  // 4000
-    private const COST_FEB             = self::GRAM * self::HARGA_FEB / 100;  // 7000
+    private const HARGA_JAN = 2000.0;   // /100g
 
-    private User      $ahliGizi;
+    private const HARGA_FEB = 3500.0;   // /100g
+
+    private const ANGGARAN_BALITA_JAN = 8000.0;
+
+    private const ANGGARAN_SD4_JAN = 10000.0;
+
+    private const ANGGARAN_BALITA_FEB = 10000.0;
+
+    private const ANGGARAN_SD4_FEB = 14000.0;
+
+    private const GRAM = 200;
+
+    private const COST_JAN = self::GRAM * self::HARGA_JAN / 100;  // 4000
+
+    private const COST_FEB = self::GRAM * self::HARGA_FEB / 100;  // 7000
+
+    private User $ahliGizi;
+
     private BahanPangan $bahan;
 
     /** Semua 12 kelompok_sasaran dari AKG::KELOMPOK */
@@ -63,24 +73,24 @@ class IntegrationHargaAnggaranTest extends TestCase
         parent::setUp();
 
         $this->ahliGizi = User::factory()->create([
-            'role'      => 'ahli_gizi',
+            'role' => 'ahli_gizi',
             'unit_sppg' => 'SPPG Test',
         ]);
 
         $this->bahan = BahanPangan::create([
-            'kode'        => 'TES-NASI',
-            'nama_bahan'  => 'Nasi Putih (Integ Test)',
-            'kategori'    => 'Serealia',
-            'bdd'         => 100,
-            'energi'      => 180,
-            'protein'     => 4,
-            'lemak'       => 0,
+            'kode' => 'TES-NASI',
+            'nama_bahan' => 'Nasi Putih (Integ Test)',
+            'kategori' => 'Serealia',
+            'bdd' => 100,
+            'energi' => 180,
+            'protein' => 4,
+            'lemak' => 0,
             'karbohidrat' => 40,
-            'serat'       => 0,
-            'kalsium'     => 0,
-            'besi'        => 0,
-            'vit_c'       => 0,
-            'is_active'   => true,
+            'serat' => 0,
+            'kalsium' => 0,
+            'besi' => 0,
+            'vit_c' => 0,
+            'is_active' => true,
         ]);
 
         $this->kelompokSasaranList = array_keys(AKG::KELOMPOK);  // 12 kelompok
@@ -89,7 +99,7 @@ class IntegrationHargaAnggaranTest extends TestCase
     // ─── Helper: set harga bahan (auto-close lama) ────────────────────
     private function tetapkanHarga(float $hargaPer100g, string $berlakuMulai): void
     {
-        $berlakuSampaiLama = \Carbon\Carbon::parse($berlakuMulai)->subDay()->toDateString();
+        $berlakuSampaiLama = Carbon::parse($berlakuMulai)->subDay()->toDateString();
         HargaBahan::where('bahan_pangan_id', $this->bahan->id)
             ->whereNull('berlaku_sampai')
             ->where('berlaku_mulai', '<', $berlakuMulai)
@@ -97,16 +107,16 @@ class IntegrationHargaAnggaranTest extends TestCase
 
         HargaBahan::create([
             'bahan_pangan_id' => $this->bahan->id,
-            'harga_per_100g'  => $hargaPer100g,
-            'berlaku_mulai'   => $berlakuMulai,
-            'berlaku_sampai'  => null,
+            'harga_per_100g' => $hargaPer100g,
+            'berlaku_mulai' => $berlakuMulai,
+            'berlaku_sampai' => null,
         ]);
     }
 
     // ─── Helper: set anggaran kedua kelompok (auto-close lama) ────────
     private function tetapkanAnggaran(float $balita, float $sd4, string $berlakuMulai): void
     {
-        $berlakuSampaiLama = \Carbon\Carbon::parse($berlakuMulai)->subDay()->toDateString();
+        $berlakuSampaiLama = Carbon::parse($berlakuMulai)->subDay()->toDateString();
 
         foreach (['balita_sd3' => $balita, 'sd4_ibu_menyusui' => $sd4] as $kelompok => $anggaran) {
             AnggaranPorsi::where('kelompok', $kelompok)
@@ -114,11 +124,11 @@ class IntegrationHargaAnggaranTest extends TestCase
                 ->update(['berlaku_sampai' => $berlakuSampaiLama]);
 
             AnggaranPorsi::create([
-                'kelompok'           => $kelompok,
+                'kelompok' => $kelompok,
                 'anggaran_per_porsi' => $anggaran,
-                'berlaku_mulai'      => $berlakuMulai,
-                'berlaku_sampai'     => null,
-                'created_by'         => $this->ahliGizi->id,
+                'berlaku_mulai' => $berlakuMulai,
+                'berlaku_sampai' => null,
+                'created_by' => $this->ahliGizi->id,
             ]);
         }
     }
@@ -131,29 +141,29 @@ class IntegrationHargaAnggaranTest extends TestCase
     ): int {
         $harga = HargaBahan::hargaAktif($this->bahan->id, $tanggal);
 
-        $menu = MenuHarian::create([
-            'tanggal'            => $tanggal,
-            'user_id'            => $this->ahliGizi->id,
-            'nama_menu'          => "Menu {$tanggal} {$kelompokSasaran}",
-            'status'             => 'draft',
-            'kelompok'           => $kelompok,
-            'kelompok_sasaran'   => $kelompokSasaran,
-            'jumlah_porsi'       => 1,
+        $menu = MenuHarian::forceCreate([
+            'tanggal' => $tanggal,
+            'user_id' => $this->ahliGizi->id,
+            'nama_menu' => "Menu {$tanggal} {$kelompokSasaran}",
+            'status' => 'draft',
+            'kelompok' => $kelompok,
+            'kelompok_sasaran' => $kelompokSasaran,
+            'jumlah_porsi' => 1,
             'anggaran_per_porsi' => AnggaranPorsi::aktif($tanggal, $kelompok),
         ]);
 
         MenuDetailBahan::create([
-            'menu_harian_id'  => $menu->id,
+            'menu_harian_id' => $menu->id,
             'bahan_pangan_id' => $this->bahan->id,
-            'jumlah_gram'     => self::GRAM,
-            'jumlah_porsi'    => 1,
-            'harga_per_100g'  => $harga > 0 ? $harga : null,
+            'jumlah_gram' => self::GRAM,
+            'jumlah_porsi' => 1,
+            'harga_per_100g' => $harga > 0 ? $harga : null,
         ]);
 
-        $menu->update([
-            'status'             => 'final',
+        $menu->forceFill([
+            'status' => 'final',
             'anggaran_per_porsi' => AnggaranPorsi::aktif($tanggal, $kelompok),
-        ]);
+        ])->save();
 
         return $menu->id;
     }
@@ -171,6 +181,7 @@ class IntegrationHargaAnggaranTest extends TestCase
         if ($januari) {
             return $kelompok === 'balita_sd3' ? self::ANGGARAN_BALITA_JAN : self::ANGGARAN_SD4_JAN;
         }
+
         return $kelompok === 'balita_sd3' ? self::ANGGARAN_BALITA_FEB : self::ANGGARAN_SD4_FEB;
     }
 
@@ -187,11 +198,11 @@ class IntegrationHargaAnggaranTest extends TestCase
         // ── 2. Buat 360 menu Januari (30 hari × 12 kelompok_sasaran) ─
         $idsJan = [];  // ['kelompok_sasaran' => [id, ...]]
         foreach ($this->kelompokSasaranList as $ks) {
-            $kelompok       = AKG::toAnggaranKelompok($ks);
-            $idsJan[$ks]    = [];
+            $kelompok = AKG::toAnggaranKelompok($ks);
+            $idsJan[$ks] = [];
             for ($hari = 1; $hari <= 30; $hari++) {
-                $tanggal        = sprintf('2026-01-%02d', $hari);
-                $idsJan[$ks][]  = $this->buatDanFinalisasi($tanggal, $kelompok, $ks);
+                $tanggal = sprintf('2026-01-%02d', $hari);
+                $idsJan[$ks][] = $this->buatDanFinalisasi($tanggal, $kelompok, $ks);
             }
         }
 
@@ -204,9 +215,9 @@ class IntegrationHargaAnggaranTest extends TestCase
             foreach ([0, 14, 29] as $idx) {  // cek menu pertama, tengah, terakhir
                 $b = $this->freshMenu($idsJan[$ks][$idx])->totalBiaya();
                 $this->assertEquals(self::COST_JAN, $b['cost_per_porsi'],
-                    "Jan [{$ks}] hari " . ($idx + 1) . " — cost harus Rp " . self::COST_JAN);
+                    "Jan [{$ks}] hari ".($idx + 1).' — cost harus Rp '.self::COST_JAN);
                 $this->assertEquals($expectedAng, $b['anggaran'],
-                    "Jan [{$ks}] hari " . ($idx + 1) . " — anggaran harus Rp {$expectedAng}");
+                    "Jan [{$ks}] hari ".($idx + 1)." — anggaran harus Rp {$expectedAng}");
             }
         }
 
@@ -227,20 +238,20 @@ class IntegrationHargaAnggaranTest extends TestCase
             foreach ([0, 14, 29] as $idx) {
                 $b = $this->freshMenu($idsJan[$ks][$idx])->totalBiaya();
                 $this->assertEquals(self::COST_JAN, $b['cost_per_porsi'],
-                    "Setelah Feb ditetapkan: Jan [{$ks}] hari " . ($idx + 1) . " cost HARUS TETAP Rp " . self::COST_JAN . " (bukan Rp " . self::COST_FEB . ")");
+                    "Setelah Feb ditetapkan: Jan [{$ks}] hari ".($idx + 1).' cost HARUS TETAP Rp '.self::COST_JAN.' (bukan Rp '.self::COST_FEB.')');
                 $this->assertEquals($expectedAng, $b['anggaran'],
-                    "Setelah Feb ditetapkan: Jan [{$ks}] hari " . ($idx + 1) . " anggaran HARUS TETAP Rp {$expectedAng}");
+                    "Setelah Feb ditetapkan: Jan [{$ks}] hari ".($idx + 1)." anggaran HARUS TETAP Rp {$expectedAng}");
             }
         }
 
         // ── 6. Buat 360 menu Februari ─────────────────────────────────
         $idsFeb = [];
         foreach ($this->kelompokSasaranList as $ks) {
-            $kelompok      = AKG::toAnggaranKelompok($ks);
-            $idsFeb[$ks]   = [];
+            $kelompok = AKG::toAnggaranKelompok($ks);
+            $idsFeb[$ks] = [];
             for ($hari = 1; $hari <= 30; $hari++) {
-                $tanggal        = sprintf('2026-02-%02d', $hari);
-                $idsFeb[$ks][]  = $this->buatDanFinalisasi($tanggal, $kelompok, $ks);
+                $tanggal = sprintf('2026-02-%02d', $hari);
+                $idsFeb[$ks][] = $this->buatDanFinalisasi($tanggal, $kelompok, $ks);
             }
         }
 
@@ -253,9 +264,9 @@ class IntegrationHargaAnggaranTest extends TestCase
             foreach ([0, 14, 29] as $idx) {
                 $b = $this->freshMenu($idsFeb[$ks][$idx])->totalBiaya();
                 $this->assertEquals(self::COST_FEB, $b['cost_per_porsi'],
-                    "Feb [{$ks}] hari " . ($idx + 1) . " — cost harus Rp " . self::COST_FEB);
+                    "Feb [{$ks}] hari ".($idx + 1).' — cost harus Rp '.self::COST_FEB);
                 $this->assertEquals($expectedAng, $b['anggaran'],
-                    "Feb [{$ks}] hari " . ($idx + 1) . " — anggaran harus Rp {$expectedAng}");
+                    "Feb [{$ks}] hari ".($idx + 1)." — anggaran harus Rp {$expectedAng}");
             }
         }
 
@@ -265,7 +276,7 @@ class IntegrationHargaAnggaranTest extends TestCase
             foreach ([0, 29] as $idx) {
                 $b = $this->freshMenu($idsJan[$ks][$idx])->totalBiaya();
                 $this->assertEquals(self::COST_JAN, $b['cost_per_porsi'],
-                    "Final check: Jan [{$ks}] cost masih Rp " . self::COST_JAN);
+                    "Final check: Jan [{$ks}] cost masih Rp ".self::COST_JAN);
                 $this->assertEquals($expectedAng, $b['anggaran'],
                     "Final check: Jan [{$ks}] anggaran masih Rp {$expectedAng}");
             }
@@ -282,14 +293,14 @@ class IntegrationHargaAnggaranTest extends TestCase
         $this->tetapkanAnggaran(self::ANGGARAN_BALITA_JAN, self::ANGGARAN_SD4_JAN, '2026-01-01');
 
         foreach ($this->kelompokSasaranList as $ks) {
-            $kelompok    = AKG::toAnggaranKelompok($ks);
+            $kelompok = AKG::toAnggaranKelompok($ks);
             $expAnggaran = $this->expectedAnggaran($ks, true);
-            $id          = $this->buatDanFinalisasi('2026-01-15', $kelompok, $ks);
+            $id = $this->buatDanFinalisasi('2026-01-15', $kelompok, $ks);
 
             // harga_per_100g dikunci di MenuDetailBahan
             $detail = MenuDetailBahan::where('menu_harian_id', $id)->firstOrFail();
             $this->assertEquals(self::HARGA_JAN, (float) $detail->harga_per_100g,
-                "Detail [{$ks}]: harga_per_100g harus = " . self::HARGA_JAN);
+                "Detail [{$ks}]: harga_per_100g harus = ".self::HARGA_JAN);
 
             // anggaran_per_porsi dikunci di MenuHarian
             $menu = MenuHarian::find($id);
@@ -308,22 +319,22 @@ class IntegrationHargaAnggaranTest extends TestCase
         $this->tetapkanAnggaran(self::ANGGARAN_BALITA_JAN, self::ANGGARAN_SD4_JAN, '2026-01-01');
 
         // Buat menu draft Jan 10 (tidak di-finalize)
-        $menu = MenuHarian::create([
-            'tanggal'            => '2026-01-10',
-            'user_id'            => $this->ahliGizi->id,
-            'nama_menu'          => 'Menu Draft',
-            'status'             => 'draft',
-            'kelompok'           => 'sd4_ibu_menyusui',
-            'kelompok_sasaran'   => 'SD_4_6',
-            'jumlah_porsi'       => 1,
+        $menu = MenuHarian::forceCreate([
+            'tanggal' => '2026-01-10',
+            'user_id' => $this->ahliGizi->id,
+            'nama_menu' => 'Menu Draft',
+            'status' => 'draft',
+            'kelompok' => 'sd4_ibu_menyusui',
+            'kelompok_sasaran' => 'SD_4_6',
+            'jumlah_porsi' => 1,
             'anggaran_per_porsi' => AnggaranPorsi::aktif('2026-01-10', 'sd4_ibu_menyusui'),
         ]);
         MenuDetailBahan::create([
-            'menu_harian_id'  => $menu->id,
+            'menu_harian_id' => $menu->id,
             'bahan_pangan_id' => $this->bahan->id,
-            'jumlah_gram'     => self::GRAM,
-            'jumlah_porsi'    => 1,
-            'harga_per_100g'  => null,  // belum di-snapshot
+            'jumlah_gram' => self::GRAM,
+            'jumlah_porsi' => 1,
+            'harga_per_100g' => null,  // belum di-snapshot
         ]);
 
         // Ubah tarif ke Februari

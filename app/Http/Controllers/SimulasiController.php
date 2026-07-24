@@ -8,6 +8,7 @@ use App\Models\BahanPangan;
 use App\Models\HargaBahan;
 use App\Models\MenuDetailBahan;
 use App\Models\MenuHarian;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -51,8 +52,13 @@ class SimulasiController extends Controller
         $biayaTotal = 0;
         $detail = [];
 
+        // Batch-load bahan + harga sekali per request, bukan per item (audit D3).
+        $bahanIds = collect($request->bahans)->pluck('id')->unique()->all();
+        $bahanMap = BahanPangan::whereIn('id', $bahanIds)->get()->keyBy('id');
+        $hargaMap = HargaBahan::hargaAktifBatch($bahanIds, $tanggal);
+
         foreach ($request->bahans as $item) {
-            $b = BahanPangan::find($item['id']);
+            $b = $bahanMap->get($item['id']);
             if (! $b) {
                 continue;
             }
@@ -69,7 +75,7 @@ class SimulasiController extends Controller
                 $giziItemBatch[$k] = $val;
             }
 
-            $hargaVal = HargaBahan::hargaAktif($b->id, $tanggal);
+            $hargaVal = $hargaMap[$b->id] ?? 0.0;
             $biayaItem = $hargaVal > 0 ? ($gram * $porsi / 100) * $hargaVal : 0;
             $biayaTotal += $biayaItem;
 
@@ -140,6 +146,10 @@ class SimulasiController extends Controller
 
         $today = $menuHarian->tanggal->toDateString();
 
+        // Batch-load harga sekali, bukan per detail bahan (audit D3).
+        $bahanIds = $menuHarian->detailBahans->pluck('bahanPangan.id')->filter()->unique()->all();
+        $hargaMap = HargaBahan::hargaAktifBatch($bahanIds, $today);
+
         $existingBahans = $menuHarian->detailBahans
             ->filter(fn ($d) => $d->bahanPangan)
             ->map(fn ($d) => [
@@ -154,7 +164,7 @@ class SimulasiController extends Controller
                 'bdd' => $d->bahanPangan->bdd,
                 'jumlah_gram' => $d->jumlah_gram,
                 'jumlah_porsi' => $d->jumlah_porsi,
-                'harga_per_100g' => HargaBahan::hargaAktif($d->bahanPangan->id, $today),
+                'harga_per_100g' => $hargaMap[$d->bahanPangan->id] ?? 0.0,
             ])->values();
 
         $anggaranBalitaSd3 = AnggaranPorsi::aktif($today, 'balita_sd3');
@@ -201,22 +211,88 @@ class SimulasiController extends Controller
                 ], 422);
             }
 
-            DB::transaction(function () use ($request, $menu, $kelompok, $kelompokSasaran) {
-                $tgl = $menu->tanggal->toDateString();
+            $tglMenu = $menu->tanggal->toDateString();
 
-                $menu->update([
+            // Pindah kelompok_sasaran bisa bentrok dengan menu lain di tanggal yang sama
+            // (unique (tanggal, kelompok_sasaran)) — tolak sebelum transaksi menghapus detail.
+            if ($kelompokSasaran !== $menu->kelompok_sasaran
+                && $this->menuBentrok($tglMenu, $kelompokSasaran, $menu->id)) {
+                return $this->responsDuplikat($tglMenu, $kelompokSasaran, $menu->id);
+            }
+
+            // Batch-load harga sekali sebelum transaksi (audit D3), bukan per bahan di dalamnya.
+            $hargaMap = HargaBahan::hargaAktifBatch(
+                collect($request->bahans)->pluck('id')->unique()->all(),
+                $tglMenu
+            );
+
+            try {
+                DB::transaction(function () use ($request, $menu, $kelompok, $kelompokSasaran, $hargaMap) {
+                    $tgl = $menu->tanggal->toDateString();
+
+                    $menu->fill([
+                        'nama_menu' => $request->nama_menu,
+                        'catatan_anggaran' => $request->catatan,
+                        'jumlah_porsi' => $request->jumlah_porsi,
+                        'kelompok' => $kelompok,
+                        'kelompok_sasaran' => $kelompokSasaran,
+                    ]);
+                    $menu->anggaran_per_porsi = AnggaranPorsi::aktif($tgl, $kelompok);
+                    $menu->save();
+
+                    $menu->detailBahans()->delete();
+
+                    foreach ($request->bahans as $item) {
+                        $harga = $hargaMap[(int) $item['id']] ?? 0.0;
+                        MenuDetailBahan::create([
+                            'menu_harian_id' => $menu->id,
+                            'bahan_pangan_id' => $item['id'],
+                            'jumlah_gram' => $item['gram'],
+                            'jumlah_porsi' => $item['porsi'],
+                            'harga_per_100g' => $harga > 0 ? $harga : null,
+                        ]);
+                    }
+                });
+            } catch (UniqueConstraintViolationException) {
+                // Menu lain menempati slot (tanggal, kelompok_sasaran) di sela pre-check
+                // dan commit. Transaksi sudah rollback, jadi menu ini utuh.
+                return $this->responsDuplikat($tglMenu, $kelompokSasaran, $menu->id);
+            }
+
+            return response()->json([
+                'success' => 'Menu berhasil diperbarui.',
+                'redirect' => route('menu-harian.show', $menu),
+            ]);
+        }
+
+        // ── Mode tambah baru ─────────────────────────────────────────────────
+        if ($this->menuBentrok($request->tanggal, $kelompokSasaran)) {
+            return $this->responsDuplikat($request->tanggal, $kelompokSasaran);
+        }
+
+        // Batch-load harga sekali sebelum transaksi (audit D3), bukan per bahan di dalamnya.
+        $hargaMap = HargaBahan::hargaAktifBatch(
+            collect($request->bahans)->pluck('id')->unique()->all(),
+            $request->tanggal
+        );
+
+        try {
+            DB::transaction(function () use ($request, $kelompok, $kelompokSasaran, $hargaMap) {
+                $tgl = $request->tanggal;
+                $menu = MenuHarian::forceCreate([
+                    'tanggal' => $tgl,
                     'nama_menu' => $request->nama_menu,
                     'catatan_anggaran' => $request->catatan,
                     'jumlah_porsi' => $request->jumlah_porsi,
                     'kelompok' => $kelompok,
                     'kelompok_sasaran' => $kelompokSasaran,
                     'anggaran_per_porsi' => AnggaranPorsi::aktif($tgl, $kelompok),
+                    'status' => 'draft',
+                    'user_id' => Auth::id(),
                 ]);
 
-                $menu->detailBahans()->delete();
-
                 foreach ($request->bahans as $item) {
-                    $harga = HargaBahan::hargaAktif((int) $item['id'], $tgl);
+                    $harga = $hargaMap[(int) $item['id']] ?? 0.0;
                     MenuDetailBahan::create([
                         'menu_harian_id' => $menu->id,
                         'bahan_pangan_id' => $item['id'],
@@ -226,54 +302,46 @@ class SimulasiController extends Controller
                     ]);
                 }
             });
-
-            return response()->json([
-                'success' => 'Menu berhasil diperbarui.',
-                'redirect' => route('menu-harian.show', $menu),
-            ]);
+        } catch (UniqueConstraintViolationException) {
+            // Submit paralel: request lain menyimpan slot yang sama setelah pre-check
+            // di atas lolos. Unique index (tanggal, kelompok_sasaran) yang menahan,
+            // transaksi rollback, lalu jawab 422 seperti duplikat biasa — bukan 500.
+            return $this->responsDuplikat($request->tanggal, $kelompokSasaran);
         }
-
-        // ── Mode tambah baru ─────────────────────────────────────────────────
-        $existing = MenuHarian::whereDate('tanggal', $request->tanggal)
-            ->where('kelompok_sasaran', $kelompokSasaran)
-            ->first();
-
-        if ($existing) {
-            return response()->json([
-                'error' => 'Menu untuk tanggal dan kelompok ini sudah ada. Silakan edit menu yang sudah ada.',
-                'redirect' => route('simulasi.edit-simulasi', $existing),
-            ], 422);
-        }
-
-        DB::transaction(function () use ($request, $kelompok, $kelompokSasaran) {
-            $tgl = $request->tanggal;
-            $menu = MenuHarian::create([
-                'tanggal' => $tgl,
-                'nama_menu' => $request->nama_menu,
-                'catatan_anggaran' => $request->catatan,
-                'jumlah_porsi' => $request->jumlah_porsi,
-                'kelompok' => $kelompok,
-                'kelompok_sasaran' => $kelompokSasaran,
-                'anggaran_per_porsi' => AnggaranPorsi::aktif($tgl, $kelompok),
-                'status' => 'draft',
-                'user_id' => Auth::id(),
-            ]);
-
-            foreach ($request->bahans as $item) {
-                $harga = HargaBahan::hargaAktif((int) $item['id'], $tgl);
-                MenuDetailBahan::create([
-                    'menu_harian_id' => $menu->id,
-                    'bahan_pangan_id' => $item['id'],
-                    'jumlah_gram' => $item['gram'],
-                    'jumlah_porsi' => $item['porsi'],
-                    'harga_per_100g' => $harga > 0 ? $harga : null,
-                ]);
-            }
-        });
 
         return response()->json([
             'success' => 'Menu berhasil disimpan sebagai draft. Silakan upload foto menu sebelum melakukan finalisasi.',
             'redirect' => route('menu-harian.index'),
         ]);
+    }
+
+    /**
+     * Apakah slot (tanggal, kelompok_sasaran) sudah ditempati menu lain?
+     * $kecualiId dipakai saat mode edit agar menu itu sendiri tidak dihitung bentrok.
+     */
+    private function menuBentrok(string $tanggal, string $kelompokSasaran, ?int $kecualiId = null): bool
+    {
+        return $this->queryMenuBentrok($tanggal, $kelompokSasaran, $kecualiId)->exists();
+    }
+
+    /**
+     * Respons 422 seragam untuk bentrok slot (tanggal, kelompok_sasaran),
+     * lengkap dengan link edit ke menu yang sudah menempati slot tersebut.
+     */
+    private function responsDuplikat(string $tanggal, string $kelompokSasaran, ?int $kecualiId = null)
+    {
+        $existing = $this->queryMenuBentrok($tanggal, $kelompokSasaran, $kecualiId)->first();
+
+        return response()->json([
+            'error' => 'Menu untuk tanggal dan kelompok ini sudah ada. Silakan edit menu yang sudah ada.',
+            'redirect' => $existing ? route('simulasi.edit-simulasi', $existing) : null,
+        ], 422);
+    }
+
+    private function queryMenuBentrok(string $tanggal, string $kelompokSasaran, ?int $kecualiId = null)
+    {
+        return MenuHarian::whereDate('tanggal', $tanggal)
+            ->where('kelompok_sasaran', $kelompokSasaran)
+            ->when($kecualiId, fn ($q) => $q->where('id', '!=', $kecualiId));
     }
 }

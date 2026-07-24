@@ -6,6 +6,7 @@ use App\Models\AnggaranPorsi;
 use App\Models\HargaBahan;
 use App\Models\MenuHarian;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -31,7 +32,17 @@ class MenuHarianController extends Controller
 
         $menus = $query->paginate(15)->withQueryString();
 
-        return view('menu-harian.index', compact('menus'));
+        $menuCalc = [];
+        foreach ($menus as $menu) {
+            $biaya = $menu->totalBiaya();
+            $menuCalc[$menu->id] = [
+                'gizi' => $menu->totalGizi(),
+                'biaya' => $biaya,
+                'status' => MenuHarian::deriveStatusAnggaran($biaya),
+            ];
+        }
+
+        return view('menu-harian.index', compact('menus', 'menuCalc'));
     }
 
     public function create()
@@ -108,23 +119,26 @@ class MenuHarianController extends Controller
         $bahans = $data['bahans'] ?? [];
         $kelompok = $data['kelompok'] ?? $menuHarian->kelompok ?? 'sd4_ibu_menyusui';
 
-        $menuHarian->update([
+        $menuHarian->fill([
             'nama_menu' => $data['nama_menu'] ?? $menuHarian->nama_menu,
             'catatan' => $data['catatan'] ?? null,
-            'status' => $data['status'],
             'kelompok' => $kelompok,
-            'anggaran_per_porsi' => AnggaranPorsi::aktif(
-                $menuHarian->tanggal->toDateString(), $kelompok
-            ),
         ]);
+        $menuHarian->status = $data['status'];
+        $menuHarian->anggaran_per_porsi = AnggaranPorsi::aktif(
+            $menuHarian->tanggal->toDateString(), $kelompok
+        );
+        $menuHarian->save();
 
         $menuHarian->detailBahans()->delete();
+
+        $defaultJumlahPorsi = max((int) $menuHarian->jumlah_porsi, 1);
 
         foreach ($bahans as $b) {
             $menuHarian->detailBahans()->create([
                 'bahan_pangan_id' => $b['bahan_pangan_id'],
                 'jumlah_gram' => $b['jumlah_gram'],
-                'jumlah_porsi' => $b['jumlah_porsi'] ?? 1,  // ← tambahkan ini
+                'jumlah_porsi' => $b['jumlah_porsi'] ?? $defaultJumlahPorsi,
             ]);
         }
 
@@ -198,20 +212,37 @@ class MenuHarianController extends Controller
                 ->with('error', 'Upload foto menu terlebih dahulu sebelum finalisasi.');
         }
 
-        $tgl = $menuHarian->tanggal->toDateString();
+        // Kunci baris di dalam transaksi + re-cek status: dua submit finalize
+        // bersamaan pada menu yang sama tidak boleh keduanya lolos dan menimpa
+        // snapshot harga/anggaran secara parsial.
+        $sudahFinalDuluan = DB::transaction(function () use ($menuHarian) {
+            $menu = MenuHarian::whereKey($menuHarian->id)->lockForUpdate()->first();
 
-        $menuHarian->update([
-            'status' => 'final',
-            'anggaran_per_porsi' => AnggaranPorsi::aktif($tgl, $menuHarian->kelompok),
-        ]);
-
-        // Kunci harga tiap bahan pada tanggal menu — snapshot agar tidak berubah
-        // jika tarif harga bahan diperbarui di kemudian hari
-        foreach ($menuHarian->detailBahans as $detail) {
-            if ($detail->harga_per_100g === null) {
-                $harga = HargaBahan::hargaAktif($detail->bahan_pangan_id, $tgl);
-                $detail->update(['harga_per_100g' => $harga > 0 ? $harga : null]);
+            if ($menu->status !== 'draft') {
+                return true;
             }
+
+            $tgl = $menu->tanggal->toDateString();
+
+            $menu->status = 'final';
+            $menu->anggaran_per_porsi = AnggaranPorsi::aktif($tgl, $menu->kelompok);
+            $menu->save();
+
+            // Kunci harga tiap bahan pada tanggal menu — snapshot agar tidak berubah
+            // jika tarif harga bahan diperbarui di kemudian hari
+            foreach ($menu->detailBahans as $detail) {
+                if ($detail->harga_per_100g === null) {
+                    $harga = HargaBahan::hargaAktif($detail->bahan_pangan_id, $tgl);
+                    $detail->update(['harga_per_100g' => $harga]);
+                }
+            }
+
+            return false;
+        });
+
+        if ($sudahFinalDuluan) {
+            return redirect()->route('menu-harian.show', $menuHarian)
+                ->with('error', 'Menu sudah berstatus final.');
         }
 
         return redirect()->route('menu-harian.show', $menuHarian)
